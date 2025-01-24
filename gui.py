@@ -34,11 +34,23 @@ class AddModelDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
+        # Словарь провайдеров и их endpoint'ов
+        self.providers = {
+            "OpenAI": "https://api.openai.com/v1",
+            "Anthropic": "https://api.anthropic.com/",
+            "OpenRouter": "https://openrouter.ai/api/v1/chat/completions"
+        }
+
         # Поля ввода
         self.name_edit = QLineEdit(self)
-        self.provider_edit = QLineEdit(self)
+        self.provider_combo = QComboBox(self)
+        self.provider_combo.addItems(list(self.providers.keys()))
+        self.provider_combo.currentTextChanged.connect(self.on_provider_changed)
+        
         self.api_endpoint_edit = QLineEdit(self)
+        self.api_endpoint_edit.setText(self.providers[self.provider_combo.currentText()])
         self.model_name_edit = QLineEdit(self)
+        self.access_token_edit = QLineEdit(self)
 
         # Добавляем поля с метками
         form_layout = QVBoxLayout()
@@ -47,13 +59,16 @@ class AddModelDialog(QDialog):
         form_layout.addWidget(self.name_edit)
 
         form_layout.addWidget(QLabel("Провайдер:"))
-        form_layout.addWidget(self.provider_edit)
+        form_layout.addWidget(self.provider_combo)
 
         form_layout.addWidget(QLabel("API endpoint:"))
         form_layout.addWidget(self.api_endpoint_edit)
 
         form_layout.addWidget(QLabel("Название модели:"))
         form_layout.addWidget(self.model_name_edit)
+
+        form_layout.addWidget(QLabel("Токен доступа:"))
+        form_layout.addWidget(self.access_token_edit)
 
         layout.addLayout(form_layout)
 
@@ -71,13 +86,18 @@ class AddModelDialog(QDialog):
 
         layout.addLayout(button_layout)
 
+    def on_provider_changed(self, provider):
+        """Обработчик изменения провайдера."""
+        self.api_endpoint_edit.setText(self.providers[provider])
+
     def get_model_data(self):
         """Возвращает данные модели из полей ввода."""
         return {
             "name": self.name_edit.text(),
-            "provider": self.provider_edit.text(),
+            "provider": self.provider_combo.currentText(),
             "api_endpoint": self.api_endpoint_edit.text(),
             "model_name": self.model_name_edit.text(),
+            "access_token": self.access_token_edit.text(),
         }
 
 
@@ -149,7 +169,9 @@ class MainWindow(QMainWindow):
         # Проверяем, нужно ли запускать свернутым
         start_minimized, _ = self.settings_manager.get_behavior()
         if start_minimized:
-            self.hide()
+            self.showMinimized()
+        else:
+            self.show()
 
     def update_model_combo(self):
         """Обновляет список моделей в комбобоксе."""
@@ -406,6 +428,13 @@ class SettingsWindow(QDialog):
             models_text.append(f"Провайдер: {model['provider']}")
             models_text.append(f"API endpoint: {model['api_endpoint']}")
             models_text.append(f"Модель: {model['model_name']}")
+            if model.get('access_token'):
+                # Показываем только первые и последние 4 символа токена для безопасности
+                token = model['access_token']
+                masked_token = f"{token[:4]}...{token[-4:]}" if len(token) > 8 else "****"
+                models_text.append(f"Токен: {masked_token}")
+            else:
+                models_text.append("Токен: не установлен")
             models_text.append("-" * 30)
         self.models_edit.setText("\n".join(models_text))
 
@@ -468,6 +497,7 @@ class SettingsWindow(QDialog):
                     model_data["provider"],
                     model_data["api_endpoint"],
                     model_data["model_name"],
+                    model_data["access_token"],
                 )
 
                 # Обновляем список моделей

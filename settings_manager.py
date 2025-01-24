@@ -126,8 +126,16 @@ class SettingsManager:
         models = self.settings.get("models", {})
         return (models.get("available", []), models.get("current", None))
 
-    def add_model(self, name, provider, api_endpoint, model_name):
-        """Добавляет новую модель в список доступных."""
+    def add_model(self, name, provider, api_endpoint, model_name, access_token=None):
+        """Добавляет новую модель в список доступных.
+        
+        Args:
+            name: Имя модели
+            provider: Провайдер модели
+            api_endpoint: Конечная точка API
+            model_name: Название модели у провайдера
+            access_token: Токен доступа к API (опционально)
+        """
         if "models" not in self.settings:
             self.settings["models"] = {"available": [], "current": None}
 
@@ -136,6 +144,7 @@ class SettingsManager:
             "provider": provider,
             "api_endpoint": api_endpoint,
             "model_name": model_name,
+            "access_token": access_token,
         }
 
         self.settings["models"]["available"].append(model)
@@ -171,3 +180,36 @@ class SettingsManager:
             ):
                 self.settings["models"]["current"] = name
                 self.save_settings()
+
+    def set_model_access_token(self, model_name, access_token):
+        """Устанавливает токен доступа для указанной модели."""
+        if "models" in self.settings:
+            for model in self.settings["models"]["available"]:
+                if model["name"] == model_name:
+                    model["access_token"] = access_token
+                    self.save_settings()
+                    break
+
+    def get_model_info(self, model_name=None):
+        """Возвращает информацию о модели.
+        
+        Args:
+            model_name: Имя модели. Если не указано, возвращает информацию о текущей модели.
+            
+        Returns:
+            dict: Информация о модели (name, provider, api_endpoint, model_name, access_token)
+            или None, если модель не найдена
+        """
+        if "models" not in self.settings:
+            return None
+        
+        if model_name is None:
+            model_name = self.settings["models"].get("current")
+            if model_name is None:
+                return None
+        
+        for model in self.settings["models"]["available"]:
+            if model["name"] == model_name:
+                return model.copy()  # Возвращаем копию, чтобы избежать случайных изменений
+        
+        return None

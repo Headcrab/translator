@@ -22,7 +22,7 @@
             "Казахский",
             "Суахили"
         ],
-        "current": "Русский"
+        "current": "Английский"
     },
     "models": {
         "available": [
@@ -39,6 +39,6 @@
                 "model_name": "gpt-4o"
             }
         ],
-        "current": "gpt-4o - OpenAI"
+        "current": "gpt-4o-mini - OpenAI"
     }
 }
