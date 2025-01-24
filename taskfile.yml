@@ -1,0 +1,81 @@
+version: '3'
+
+tasks:
+  install:
+    desc: Установка зависимостей проекта
+    cmds:
+      - pip install -r requirements.txt
+      - pip install pyinstaller
+
+  run:
+    desc: Запуск приложения
+    cmds:
+      - python main.py
+
+  build:
+    desc: Сборка для текущей платформы
+    deps: [install]
+    cmds:
+      - pyinstaller --onefile --noconsole --name translator --add-data "settings.json:." main.py
+
+  build-windows:
+    desc: Сборка для Windows
+    deps: [install]
+    cmds:
+      - pyinstaller --onefile --noconsole --name translator.exe --add-data "settings.json;." --distpath ./dist/windows main.py
+
+  build-linux:
+    desc: Сборка для Linux
+    deps: [install]
+    cmds:
+      - pyinstaller --onefile --noconsole --name translator --add-data "settings.json:." --distpath ./dist/linux main.py
+
+  build-mac:
+    desc: Сборка для MacOS
+    deps: [install]
+    cmds:
+      - pyinstaller --onefile --noconsole --name translator --add-data "settings.json:." --distpath ./dist/macos main.py
+
+  clean:
+    desc: Очистка артефактов сборки
+    cmds:
+      - rm -rf build dist *.spec
+
+  test:
+    desc: Запуск тестов (если есть)
+    cmds:
+      - python -m pytest tests/
+
+  ruff-check:
+    desc: Проверка стиля кода с помощью ruff
+    deps: [install]
+    cmds:
+      - python -m ruff check .
+
+  ruff-format-check:
+    desc: Проверка форматирования кода
+    deps: [install]
+    cmds:
+      - python -m ruff format --check .
+
+  ruff:
+    desc: Полная проверка кода с помощью ruff
+    deps: [ruff-check, ruff-format-check]
+
+  format:
+    desc: Автоматическое форматирование кода
+    deps: [install]
+    cmds:
+      - python -m ruff format .
+
+  fix:
+    desc: Автоматическое исправление проблем с кодом
+    deps: [install]
+    cmds:
+      - python -m ruff check --fix .
+
+  lint:
+    desc: Полная проверка кода
+    deps: [ruff]
+    cmds:
+      - python -m mypy .

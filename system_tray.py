@@ -1,16 +1,13 @@
 import os
-from PyQt5.QtWidgets import (
-    QSystemTrayIcon,
-    QMenu,
-    QAction,
-    QMainWindow
-)
+from PyQt5.QtWidgets import QSystemTrayIcon, QMenu, QAction, QMainWindow
 from PyQt5.QtGui import QIcon
+
 
 class SystemTrayHandler:
     """
     Класс для иконки в системном трее, с контекстным меню и обработчиками.
     """
+
     def __init__(self, app, window):
         self.app = app
         self.window = window
@@ -20,7 +17,9 @@ class SystemTrayHandler:
         icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
         if not os.path.exists(icon_path):
             # На случай, если иконки нет – можно использовать любую Qt-иконку
-            self.tray_icon.setIcon(self.window.style().standardIcon(QMainWindow().style().SP_ComputerIcon))
+            self.tray_icon.setIcon(
+                self.window.style().standardIcon(QMainWindow().style().SP_ComputerIcon)
+            )
         else:
             self.tray_icon.setIcon(QIcon(icon_path))
 
@@ -29,7 +28,7 @@ class SystemTrayHandler:
             """Показать главное окно приложения."""
             self.window.showNormal()
             self.window.activateWindow()
-        
+
         def show_settings_window(self):
             """Показать окно настроек."""
             self.window.settings_window.show()

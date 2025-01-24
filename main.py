@@ -23,12 +23,14 @@ def main():
     # Загрузка настроек
     settings_manager = SettingsManager()
     modifiers, key = settings_manager.get_hotkey()
-    
+
     # Формируем строку хоткея
     hotkey = "+".join(modifiers) + "+" + key if modifiers else key
 
     # Регистрация глобальных горячих клавиш в отдельном потоке
-    hotkey_thread = threading.Thread(target=register_global_hotkeys, args=(main_window, hotkey), daemon=True)
+    hotkey_thread = threading.Thread(
+        target=register_global_hotkeys, args=(main_window, hotkey), daemon=True
+    )
     hotkey_thread.start()
 
     # Запускаем фоновый поток с HTTP-запросами (по желанию)

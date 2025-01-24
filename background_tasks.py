@@ -2,11 +2,13 @@ import requests
 import threading
 import time
 
+
 def run_background_http_request():
     """
     Пример фонового потока, который раз в несколько секунд опрашивает некий веб-сервис.
     Можно остановить по требованию.
     """
+
     def background_task():
         while True:
             try:
@@ -18,7 +20,7 @@ def run_background_http_request():
                     print(f"Ошибка: статус {resp.status_code}")
             except Exception as e:
                 print("Ошибка HTTP-запроса:", e)
-            
+
             # Пауза на 10 секунд
             time.sleep(10)
 
