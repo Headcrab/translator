@@ -1,0 +1,44 @@
+{
+    "window": {
+        "x": 1459,
+        "y": 415,
+        "width": 313,
+        "height": 518
+    },
+    "hotkey": {
+        "modifiers": [
+            "win"
+        ],
+        "key": "C"
+    },
+    "behavior": {
+        "start_minimized": true,
+        "minimize_to_tray_on_close": true
+    },
+    "languages": {
+        "available": [
+            "Английский",
+            "Русский",
+            "Казахский",
+            "Суахили"
+        ],
+        "current": "Русский"
+    },
+    "models": {
+        "available": [
+            {
+                "name": "gpt-4o-mini - OpenAI",
+                "provider": "OpenAI",
+                "api_endpoint": "https://api.openai.com/v1",
+                "model_name": "gpt-4o-mini"
+            },
+            {
+                "name": "gpt-4o - OpenAI",
+                "provider": "OpenAI",
+                "api_endpoint": "https://api.openai.com/v1",
+                "model_name": "gpt-4o"
+            }
+        ],
+        "current": "gpt-4o - OpenAI"
+    }
+}
