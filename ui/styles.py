@@ -82,23 +82,22 @@ QPushButton[text="Отмена"]:hover, QPushButton[text="Удалить"]:hover
 }
 
 QComboBox {
+    padding: 2px 20px 2px 5px;
+    background-color: #ffffff;
+    color: #444;
     border: 1px solid #ddd;
     border-radius: 4px;
-    padding: 5px;
-    background-color: white;
-    color: #444;
-}
-
-QComboBox:hover {
-    border-color: #007bff;
 }
 
 QComboBox::drop-down {
-    border: none;
+    subcontrol-origin: padding;
+    subcontrol-position: right center;
+    width: 20px;
+    border-left: 1px solid #ddd;
 }
 
 QComboBox::down-arrow {
-    color: #444;
+    image: url(qrc:/qt-project.org/styles/commonstyle/images/downarrow-8.png);
     width: 12px;
     height: 12px;
 }
@@ -251,23 +250,22 @@ QPushButton[text="Отмена"]:hover, QPushButton[text="Удалить"]:hover
 }
 
 QComboBox {
-    border: 1px solid #444;
-    border-radius: 4px;
-    padding: 5px;
+    padding: 2px 20px 2px 5px;
     background-color: #2d2d2d;
     color: #ffffff;
-}
-
-QComboBox:hover {
-    border-color: #0d6efd;
+    border: 1px solid #555;
+    border-radius: 4px;
 }
 
 QComboBox::drop-down {
-    border: none;
+    subcontrol-origin: padding;
+    subcontrol-position: right center;
+    width: 20px;
+    border-left: 1px solid #555;
 }
 
 QComboBox::down-arrow {
-    color: #ffffff;
+    image: url(qrc:/qt-project.org/styles/commonstyle/images/downarrow-8.png);
     width: 12px;
     height: 12px;
 }
@@ -515,3 +513,6 @@ def get_tab_style(theme_mode: str) -> str:
                 margin-right: 2px;
             }
         """
+
+def get_styles():
+    return ""  # Оставляем пустую строку, так как стили уже определены в темах

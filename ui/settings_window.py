@@ -17,7 +17,10 @@ from PyQt5.QtWidgets import (
     QToolButton,
     QTabWidget,
     QMainWindow,
+    QFontComboBox,
+    QFormLayout,
 )
+from PyQt5.QtGui import QFont
 from settings_manager import SettingsManager
 from hotkeys import register_global_hotkeys, unregister_global_hotkeys
 from .styles import get_style
@@ -30,6 +33,7 @@ class SettingsWindow(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.settings_manager = SettingsManager()
+        self.layout = QFormLayout()  # Инициализируем QFormLayout для работы с addRow
         
         # Восстановление геометрии
         x, y, w, h = self.settings_manager.get_settings_window_geometry()
@@ -42,8 +46,7 @@ class SettingsWindow(QDialog):
         # Создаем основной layout
         main_layout = QVBoxLayout(self)
         # self.apply_theme()
-        main_layout.setSpacing(8)
-        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.addLayout(self.layout)  # Добавляем form layout в основной
 
         # Создаем виджет вкладок
         self.tab_widget = QTabWidget()
@@ -58,8 +61,8 @@ class SettingsWindow(QDialog):
         
         # Создаем контент для вкладок
         content_widget = QWidget()
-        layout = QVBoxLayout(content_widget)
-        layout.setSpacing(8)
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setSpacing(8)
 
         # Группа настроек хоткеев
         hotkey_group = QGroupBox("Горячие клавиши")
@@ -157,9 +160,36 @@ class SettingsWindow(QDialog):
         hotkey_layout.addWidget(key_label)
         hotkey_layout.addWidget(self.key_combobox)
         hotkey_group.setLayout(hotkey_layout)
-        layout.addWidget(hotkey_group)
+        content_layout.addWidget(hotkey_group)
 
         # Группа настроек поведения
+        behavior_group = QGroupBox("Поведение")
+        behavior_layout = QVBoxLayout()
+        behavior_layout.setSpacing(10)
+
+        self.start_minimized_checkbox = QCheckBox("Запускать свернутым")
+        self.minimize_to_tray_checkbox = QCheckBox("Скрывать в трей при закрытии")
+
+        behavior_layout.addWidget(self.start_minimized_checkbox)
+        behavior_layout.addWidget(self.minimize_to_tray_checkbox)
+        behavior_group.setLayout(behavior_layout)
+        system_layout.addWidget(behavior_group)
+
+        # Добавляем секцию шрифтов
+        font_group = QGroupBox("Настройки шрифта")
+        font_layout = QFormLayout()
+        font_label = QLabel("Шрифт текста:")
+        self.font_combo = QFontComboBox()
+        self.size_combo = QComboBox()
+        # Заполняем размеры с проверкой на пустые значения
+        sizes = [str(s) for s in range(8, 25) if s > 0]
+        self.size_combo.addItems(sizes)
+
+        font_layout.addRow(font_label, self.font_combo)
+        font_layout.addRow(QLabel("Размер шрифта:"), self.size_combo)
+        font_group.setLayout(font_layout)
+        system_layout.addWidget(font_group)
+
         # Группа настроек внешнего вида
         appearance_group = QGroupBox("Внешний вид")
         appearance_layout = QVBoxLayout()
@@ -174,30 +204,7 @@ class SettingsWindow(QDialog):
         appearance_layout.addWidget(theme_label)
         appearance_layout.addWidget(self.theme_combo)
         appearance_group.setLayout(appearance_layout)
-        layout.addWidget(appearance_group)
-
-        # Группа настроек поведения
-        behavior_group = QGroupBox("Поведение")
-        behavior_layout = QVBoxLayout()
-        behavior_layout.setSpacing(10)
-
-        self.start_minimized_checkbox = QCheckBox("Запускать свернутым")
-        self.minimize_to_tray_checkbox = QCheckBox("Скрывать в трей при закрытии")
-
-        behavior_layout.addWidget(self.start_minimized_checkbox)
-        behavior_layout.addWidget(self.minimize_to_tray_checkbox)
-        behavior_group.setLayout(behavior_layout)
-        layout.addWidget(behavior_group)
-
-        # Добавляем новую группу для системного промпта
-        prompt_group = QGroupBox("Системный промпт")
-        prompt_layout = QVBoxLayout()
-        self.system_prompt_edit = QTextEdit()
-        self.system_prompt_edit.setPlaceholderText("Введите системный промпт для перевода...")
-        self.system_prompt_edit.setMaximumHeight(100)
-        prompt_layout.addWidget(self.system_prompt_edit)
-        prompt_group.setLayout(prompt_layout)
-        system_layout.addWidget(prompt_group)  # Добавляем в system_layout после behavior_group
+        content_layout.addWidget(appearance_group)
 
         # Группа настроек языков
         languages_group = QGroupBox("Языки")
@@ -258,7 +265,7 @@ class SettingsWindow(QDialog):
         # Добавляем горизонтальный layout в основной layout языков
         languages_layout.addLayout(lang_input_layout)
         languages_group.setLayout(languages_layout)
-        layout.addWidget(languages_group)
+        content_layout.addWidget(languages_group)
 
         # Группа настроек моделей
         models_group = QGroupBox("Модели")
@@ -311,20 +318,33 @@ class SettingsWindow(QDialog):
 
         models_layout.addLayout(models_input_layout)
         models_group.setLayout(models_layout)
-        layout.addWidget(models_group)
+        content_layout.addWidget(models_group)
+
+        # Добавляем системный промпт в раздел моделей
+        prompt_group = QGroupBox("Системный промпт")
+        prompt_layout = QVBoxLayout()
+        self.system_prompt_edit = QTextEdit()
+        self.system_prompt_edit.setPlaceholderText("Введите системный промпт для перевода...")
+        self.system_prompt_edit.setMaximumHeight(100)
+        prompt_layout.addWidget(self.system_prompt_edit)
+        prompt_group.setLayout(prompt_layout)
+        content_layout.addWidget(prompt_group)  # Добавляем в general_layout
+
+        # Удаляем старую секцию промпта из system_layout
 
         # Распределяем группы по вкладкам
         
         # Вкладка "Общие"
         general_layout.addWidget(languages_group)
         general_layout.addWidget(models_group)
+        general_layout.addWidget(prompt_group)
         general_layout.addStretch()
         
         # Вкладка "Системные"
         system_layout.addWidget(hotkey_group)
         system_layout.addWidget(appearance_group)
         system_layout.addWidget(behavior_group)
-        system_layout.addWidget(prompt_group)
+        system_layout.addWidget(font_group)
         system_layout.addStretch()
         
         # Добавляем вкладки в виджет вкладок
@@ -350,8 +370,17 @@ class SettingsWindow(QDialog):
 
         main_layout.addLayout(buttons_layout)
 
+        # Переносим инициализацию элементов интерфейса ДО загрузки настроек
+        self._init_ui_components()
         self.load_settings()
         self.apply_theme()
+        self.init_font_settings()
+
+    def _init_ui_components(self):
+        # Создаем все элементы интерфейса здесь
+        self.font_combo = QFontComboBox()
+        self.size_combo = QComboBox()
+        ...
 
     def apply_theme(self):
         """Применяет текущую тему к окну и всем его элементам."""
@@ -407,9 +436,19 @@ class SettingsWindow(QDialog):
         for model in available_models:
             self.models_list.addItem(model['name'])
 
-        # Добавляем загрузку системного промпта
-        system_prompt = self.settings_manager.get_system_prompt()
+        # Обновляем загрузку системного промпта
+        system_prompt = self.settings_manager.settings.get("models", {}).get("system_prompt", "")
         self.system_prompt_edit.setPlainText(system_prompt)
+
+        # Загрузка настроек шрифта
+        font_settings = self.settings_manager.get_font_settings()
+        current_font = QFont()
+        current_font.setFamily(font_settings["font_family"])
+        current_font.setPointSize(int(font_settings["font_size"]))
+        
+        # Устанавливаем шрифт и размер в комбобоксы
+        self.font_combo.setCurrentFont(current_font)
+        self.size_combo.setCurrentText(str(current_font.pointSize()))
 
     def closeEvent(self, event):
         """Переопределяем поведение при закрытии окна настроек."""
@@ -472,8 +511,28 @@ class SettingsWindow(QDialog):
             hotkey_str = "+".join(modifiers) + "+" + key if modifiers else key
             register_global_hotkeys(parent, hotkey_str)
 
-        # Добавляем сохранение системного промпта
-        self.settings_manager.set_system_prompt(self.system_prompt_edit.toPlainText())
+        # Обновляем сохранение системного промпта
+        models_settings = self.settings_manager.settings.get("models", {})
+        models_settings["system_prompt"] = self.system_prompt_edit.toPlainText()
+        self.settings_manager.settings["models"] = models_settings
+
+        # Сохранение настроек шрифта
+        font_family = self.font_combo.currentText()
+        try:
+            font_size = int(self.size_combo.currentText())
+        except ValueError:
+            font_size = 12
+        
+        # Добавляем проверку перед сохранением
+        if not font_family or font_size <= 0:
+            QMessageBox.warning(self, "Ошибка", "Некорректные настройки шрифта")
+            return
+        
+        self.settings_manager.save_font_settings(font_family, font_size)
+        
+        # Применяем новый шрифт ко всему приложению
+        if self.parent():
+            self.parent().apply_font(font_family, font_size)
 
         self.hide()
 
@@ -622,3 +681,14 @@ class SettingsWindow(QDialog):
             
             # Перемещаем окно
             self.move(x, y)
+
+    def init_font_settings(self):
+        # Заменяем создание нового экземпляра SettingsManager на использование существующего
+        font_settings = self.settings_manager.get_font_settings()
+        
+        # Устанавливаем текущий шрифт (исправляем получение имени шрифта)
+        current_font = QFont(font_settings["font_family"], int(font_settings["font_size"]))
+
+        # Устанавливаем шрифт и размер в комбобоксы
+        self.font_combo.setCurrentFont(current_font)
+        self.size_combo.setCurrentText(str(current_font.pointSize()))

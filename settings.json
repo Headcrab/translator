@@ -1,7 +1,7 @@
 {
     "window": {
-        "x": 932,
-        "y": 361,
+        "x": 979,
+        "y": 458,
         "width": 778,
         "height": 518
     },
@@ -19,7 +19,8 @@
         "available": [
             "Русский",
             "Английский",
-            "Русский матерный"
+            "Русский матерный",
+            "Казахский"
         ],
         "current": "Русский"
     },
@@ -47,16 +48,20 @@
                 "access_token": "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"
             }
         ],
-        "current": "google/gemini-2.0-flash-exp:free - OpenRouter"
+        "current": "google/gemini-2.0-flash-exp:free - OpenRouter",
+        "system_prompt": "Ты профессиональный переводчик. Переведи текст точно и грамотно на {language}. Сохрани форматирование и терминологию. Не добавляй комментарии.\""
     },
     "theme": {
         "mode": "dark"
     },
-    "system_prompt": "Ты профессиональный переводчик. Переведи текст точно и грамотно на {language}. Сохрани форматирование и терминологию. Не добавляй комментарии.",
     "settings_window_geometry": [
-        1109,
-        413,
+        1111,
+        398,
         400,
-        580
-    ]
+        617
+    ],
+    "appearance": {
+        "font_family": "JetBrains Mono",
+        "font_size": 12
+    }
 }

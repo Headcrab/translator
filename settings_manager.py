@@ -25,8 +25,16 @@ class SettingsManager:
             "hotkey": {"modifiers": ["win"], "key": "C"},
             "behavior": {"start_minimized": False, "minimize_to_tray_on_close": True},
             "languages": {"available": ["en", "ru", "kk"], "current": "ru"},
-            "models": {"available": [], "current": None},
+            "models": {
+                "available": [],
+                "current": None,
+                "system_prompt": "Ты профессиональный переводчик..."
+            },
             "theme": {"mode": "system"},  # Возможные значения: "light", "dark", "system"
+            "appearance": {  # Переносим настройки шрифта в отдельную секцию
+                "font_family": "Arial",
+                "font_size": 12
+            }
         }
 
         try:
@@ -295,4 +303,17 @@ class SettingsManager:
     def set_settings_window_geometry(self, x, y, width, height):
         """Сохраняет геометрию окна настроек."""
         self.settings["settings_window_geometry"] = (x, y, width, height)
+        self.save_settings()
+
+    def get_font_settings(self):
+        return {
+            "font_family": self.settings.get("appearance", {}).get("font_family", "Cascadia Code"),
+            "font_size": self.settings.get("appearance", {}).get("font_size", 12)
+        }
+
+    def save_font_settings(self, font_family, font_size):
+        if "appearance" not in self.settings:
+            self.settings["appearance"] = {}
+        self.settings["appearance"]["font_family"] = font_family
+        self.settings["appearance"]["font_size"] = font_size
         self.save_settings()

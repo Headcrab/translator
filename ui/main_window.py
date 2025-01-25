@@ -22,6 +22,7 @@ from .settings_window import SettingsWindow
 from llm_api import LLMApi
 import os
 from qasync import asyncSlot
+from PyQt5.QtGui import QFont
 
 
 class MainWindow(QMainWindow):
@@ -56,6 +57,8 @@ class MainWindow(QMainWindow):
             self.showMinimized()
         else:
             self.show()
+
+        self.apply_font_settings()
 
     def _setup_ui(self):
         """Настройка пользовательского интерфейса."""
@@ -279,6 +282,7 @@ class MainWindow(QMainWindow):
         """Открывает окно настроек."""
         if self.settings_window.exec_() == QDialog.Accepted:
             self.settings_window.load_settings()
+            self.apply_font_settings()
 
     def on_language_changed(self, language):
         """Обработчик изменения языка в дропбоксе."""
@@ -323,3 +327,27 @@ class MainWindow(QMainWindow):
         
         llm = LLMApi(model_info, self.settings_manager)
         return await llm.translate(text, target_lang)
+
+    def apply_font_settings(self):
+        """Применяем настройки шрифта к текстовым областям"""
+        settings = SettingsManager().get_font_settings()
+        font = QFont()
+        font.setFamily(settings["font_family"])
+        font.setPointSize(int(settings["font_size"]))
+        
+        # Применяем шрифт напрямую к существующим виджетам
+        self.text_edit.setFont(font)
+        self.translated_text.setFont(font)
+
+    def show_settings(self):
+        settings_dialog = SettingsWindow(self)
+        if settings_dialog.exec_():
+            # Применяем новые настройки при подтверждении
+            self.apply_font_settings()
+
+    def apply_font(self, font_family, font_size):
+        font = QFont(font_family, int(font_size))
+        # self.setFont(font)
+
+        self.text_edit.setFont(font)
+        self.translated_text.setFont(font)
