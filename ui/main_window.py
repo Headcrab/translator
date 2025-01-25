@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QGroupBox,
     QMessageBox,
+    QProgressBar,
 )
 from PyQt5.QtCore import pyqtSignal, Qt, QSize
 from settings_manager import SettingsManager
@@ -19,6 +20,8 @@ from .styles import get_style
 from .settings_window import SettingsWindow
 from llm_api import LLMApi
 import asyncio
+import os
+from qasync import asyncSlot
 
 
 class MainWindow(QMainWindow):
@@ -82,7 +85,7 @@ class MainWindow(QMainWindow):
         translate_button.setFixedSize(32, 32)
         self.apply_theme()
         translate_button.setToolTip("Перевести")
-        translate_button.clicked.connect(self.translate_text)
+        self.translate_button = translate_button
 
         # Дропбокс выбора языка
         language_label = QLabel("Язык:", self)
@@ -151,6 +154,15 @@ class MainWindow(QMainWindow):
         central_layout.addLayout(texts_layout)
         self.setCentralWidget(central_widget)
 
+        # Добавляем прогресс-бар
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.hide()
+        central_layout.addWidget(self.progress_bar)
+
+        self.translate_button.clicked.connect(self.handle_translate_click)
+
     def update_model_combo(self):
         """Обновляет список моделей в комбобоксе."""
         self.model_combo.clear()
@@ -197,11 +209,35 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", str(e))
 
-    def translate_text(self):
-        """Обработчик нажатия кнопки перевода."""
-        # Запускаем асинхронный перевод
-        asyncio.get_event_loop().create_task(self._do_translate())
-        # self._do_translate()
+    @asyncSlot()
+    async def handle_translate_click(self):
+        text = self.text_edit.toPlainText()
+        if not text:
+            return
+        
+        self.progress_bar.show()
+        
+        try:
+            model_info = self.settings_manager.get_model_info()
+            if not model_info:
+                self.show_error_message("Модель перевода не выбрана")
+                return
+            
+            llm = LLMApi(model_info)
+            target_lang = self.language_combo.currentText()
+            if not model_info.get("access_token"):
+                self.show_error_message("Токен доступа не настроен")
+                return
+            
+            translated = await llm.translate(text, target_lang)
+            if not translated:
+                raise ValueError("Пустой ответ от модели")
+            
+            self.translated_text.setPlainText(translated)
+        except Exception as e:
+            self.show_error_message(f"Ошибка перевода: {str(e)}")
+        finally:
+            self.progress_bar.hide()
 
     def update_clipboard(self, text):
         """Слот для обновления буфера обмена"""
@@ -270,3 +306,17 @@ class MainWindow(QMainWindow):
         
         # Обновляем все элементы, которые могут требовать перерисовки
         self.update()
+
+    def show_error_message(self, message):
+        QMessageBox.warning(self, "Ошибка", message)
+
+    async def translate_text(self, text: str, target_lang: str) -> str:
+        model_info = {
+            "provider": "OpenAI",
+            "api_endpoint": "https://api.openai.com/v1",
+            "model_name": "gpt-3.5-turbo",
+            "access_token": os.getenv("OPENAI_API_KEY")
+        }
+        
+        llm = LLMApi(model_info)
+        return await llm.translate(text, target_lang)

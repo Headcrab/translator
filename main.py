@@ -1,23 +1,32 @@
 import sys
 import traceback
 import threading
+import asyncio
 from PyQt5.QtWidgets import QApplication
-from ui import MainWindow
+from ui.main_window import MainWindow
 from system_tray import SystemTrayHandler
 from hotkeys import register_global_hotkeys
 from settings_manager import SettingsManager
-# from background_tasks import run_background_http_request
+from background_tasks import perform_translation
+from qasync import QEventLoop
 
 
 def main():
     # Создаём экземпляр QApplication
     app = QApplication(sys.argv)
+    loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)
+
+    # Убедиться в инициализации event loop
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     # Инициализируем главное окно
-    main_window = MainWindow()
+    window = MainWindow()
+    window.show()
 
     # Иконка в системном трее
-    tray_handler = SystemTrayHandler(app, main_window)
+    tray_handler = SystemTrayHandler(app, window)
     tray_handler.show()
 
     # Загрузка настроек
@@ -29,7 +38,7 @@ def main():
 
     # Регистрация глобальных горячих клавиш в отдельном потоке
     hotkey_thread = threading.Thread(
-        target=register_global_hotkeys, args=(main_window, hotkey), daemon=True
+        target=register_global_hotkeys, args=(window, hotkey), daemon=True
     )
     hotkey_thread.start()
 
@@ -37,7 +46,8 @@ def main():
     # run_background_http_request()
 
     # Запуск основного цикла
-    sys.exit(app.exec_())
+    with loop:
+        loop.run_forever()
 
 
 if __name__ == "__main__":

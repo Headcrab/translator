@@ -1,9 +1,9 @@
 {
     "window": {
-        "x": 1121,
-        "y": 648,
-        "width": 637,
-        "height": 322
+        "x": 804,
+        "y": 278,
+        "width": 726,
+        "height": 518
     },
     "hotkey": {
         "modifiers": [
@@ -28,16 +28,25 @@
                 "name": "gpt-4o-mini - OpenAI",
                 "provider": "OpenAI",
                 "api_endpoint": "https://api.openai.com/v1",
-                "model_name": "gpt-4o-mini"
+                "model_name": "gpt-4o-mini",
+                "access_token": "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"
             },
             {
                 "name": "gpt-4o - OpenAI",
                 "provider": "OpenAI",
                 "api_endpoint": "https://api.openai.com/v1",
-                "model_name": "gpt-4o"
+                "model_name": "gpt-4o",
+                "access_token": "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"
+            },
+            {
+                "name": "google/gemini-2.0-flash-exp:free - OpenRouter",
+                "provider": "OpenRouter",
+                "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "model_name": "google/gemini-2.0-flash-exp:free",
+                "access_token": "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"
             }
         ],
-        "current": "gpt-4o - OpenAI"
+        "current": "google/gemini-2.0-flash-exp:free - OpenRouter"
     },
     "theme": {
         "mode": "dark"

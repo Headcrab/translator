@@ -1,7 +1,10 @@
 import requests
 import threading
 import time
+import logging
 
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
 
 def run_background_http_request():
     """
@@ -27,3 +30,12 @@ def run_background_http_request():
     # Запускаем поток
     t = threading.Thread(target=background_task, daemon=True)
     t.start()
+
+def perform_translation(text):
+    try:
+        translated = llm_api.translate(text)
+        logging.info("Перевод успешно выполнен")
+        return translated
+    except Exception as e:
+        logging.error(f"Ошибка при выполнении перевода: {e}")
+        return "Ошибка перевода"

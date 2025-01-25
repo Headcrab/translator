@@ -5,6 +5,7 @@ import json
 import aiohttp
 import asyncio
 from typing import Optional, Dict, Any
+import requests
 
 class LLMApi:
     """Класс для работы с API различных LLM моделей."""
@@ -44,7 +45,7 @@ class LLMApi:
         if not text:
             return ""
             
-        prompt = f"Переведи следующий текст на {target_lang}:\n\n{text}"
+        prompt = f"Переведи следующий текст на язык {target_lang}. Сохрани разметку и форматирование. Текст:\n\n{text}"
         
         try:
             if self.provider == "OpenAI":
@@ -137,4 +138,15 @@ class LLMApi:
                     raise Exception(f"OpenRouter API вернул ошибку {response.status}: {error_text}")
                     
                 result = await response.json()
-                return result["choices"][0]["message"]["content"].strip() 
+                return result["choices"][0]["message"]["content"].strip()
+
+def translate(text):
+    # Пример реализации перевода с использованием внешнего API
+    try:
+        response = requests.post("https://api.translate.com/translate", data={"text": text})
+        response.raise_for_status()
+        return response.json().get("translated_text", "")
+    except requests.RequestException as e:
+        # Логирование ошибки
+        print(f"Ошибка при переводе: {e}")
+        return "Ошибка перевода" 
