@@ -25,10 +25,13 @@ tasks:
       - pyinstaller --onefile --noconsole --name translator.exe --add-data "settings.json;." --distpath ./dist/windows main.py
 
   build-linux:
-    desc: Сборка для Linux
-    deps: [install]
+    desc: Кросс-компиляция для Linux через Docker
     cmds:
-      - pyinstaller --onefile --noconsole --name translator --add-data "settings.json:." --distpath ./dist/linux main.py
+      - docker build -t translator-linux .
+      - docker create --name temp translator-linux
+      - docker cp temp:translator ./dist/linux/
+      - docker rm temp
+      - docker rmi translator-linux
 
   build-mac:
     desc: Сборка для MacOS

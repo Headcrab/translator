@@ -26,6 +26,7 @@ class SettingsManager:
             "behavior": {"start_minimized": False, "minimize_to_tray_on_close": True},
             "languages": {"available": ["en", "ru", "kk"], "current": "ru"},
             "models": {"available": [], "current": None},
+            "theme": {"mode": "system"},  # Возможные значения: "light", "dark", "system"
         }
 
         try:
@@ -210,8 +211,29 @@ class SettingsManager:
 
         for model in self.settings["models"]["available"]:
             if model["name"] == model_name:
-                return (
-                    model.copy()
-                )  # Возвращаем копию, чтобы избежать случайных изменений
+                return model.copy()  # Возвращаем копию, чтобы избежать случайных изменений
 
         return None
+
+    def get_theme(self):
+        """Возвращает текущую тему.
+
+        Returns:
+            str: Режим темы ('light', 'dark' или 'system')
+        """
+        return self.settings.get("theme", {}).get("mode", "system")
+
+    def set_theme(self, mode):
+        """Устанавливает тему.
+
+        Args:
+            mode: Режим темы ('light', 'dark' или 'system')
+        """
+        if mode not in ["light", "dark", "system"]:
+            raise ValueError("Недопустимый режим темы")
+        
+        if "theme" not in self.settings:
+            self.settings["theme"] = {}
+        
+        self.settings["theme"]["mode"] = mode
+        self.save_settings()

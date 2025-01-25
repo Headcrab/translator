@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
 )
 from settings_manager import SettingsManager
-from .styles import COMMON_STYLE
+from .styles import get_style
 
 
 class AddModelDialog(QDialog):
@@ -22,7 +22,7 @@ class AddModelDialog(QDialog):
 
         self.setWindowTitle("Добавить модель")
         self.setGeometry(200, 200, 350, 220)
-        self.setStyleSheet(COMMON_STYLE)
+        self.apply_theme()
 
         layout = QVBoxLayout(self)
         layout.setSpacing(8)
@@ -69,7 +69,7 @@ class AddModelDialog(QDialog):
 
         for label_text, widget in zip(labels, widgets):
             label = QLabel(label_text)
-            label.setStyleSheet("color: #444; font-weight: bold;")
+            self.apply_theme()
             form_layout.addWidget(label)
             form_layout.addWidget(widget)
 
@@ -89,6 +89,13 @@ class AddModelDialog(QDialog):
         button_layout.addWidget(cancel_button)
 
         layout.addLayout(button_layout)
+
+    def apply_theme(self):
+        """Применяет текущую тему к окну и всем его элементам."""
+        theme_mode = self.settings_manager.get_theme()
+        style = get_style(theme_mode)
+        self.setStyleSheet(style)
+        self.update()
 
     def on_provider_changed(self, provider):
         """Обработчик изменения провайдера."""

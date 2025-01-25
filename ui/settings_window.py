@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import (
 )
 from settings_manager import SettingsManager
 from hotkeys import register_global_hotkeys, unregister_global_hotkeys
-from .styles import COMMON_STYLE
+from .styles import get_style
 from .add_model_dialog import AddModelDialog
 
 
@@ -29,18 +29,20 @@ class SettingsWindow(QDialog):
         self.settings_manager = SettingsManager()
 
         self.setWindowTitle("Настройки")
-        self.setGeometry(200, 200, 450, 700)
-        self.setStyleSheet(COMMON_STYLE)
+        self.setGeometry(200, 200, 450, 800)
+        self.apply_theme()
 
         # Создаем основной layout
         main_layout = QVBoxLayout(self)
+        self.apply_theme()
         main_layout.setSpacing(8)
         main_layout.setContentsMargins(10, 10, 10, 10)
 
         # Создаем область прокрутки
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setFrameShape(QScrollArea.NoFrame)
+        # scroll_area = QScrollArea()
+        # scroll_area.setWidgetResizable(True)
+        # scroll_area.setFrameShape(QScrollArea.NoFrame)
+        # scroll_area.setStyleSheet("background-color: #2d2d2d;")
 
         # Создаем контейнер для содержимого
         content_widget = QWidget()
@@ -66,6 +68,7 @@ class SettingsWindow(QDialog):
         modifiers_layout.addStretch()
 
         hotkey_layout.addLayout(modifiers_layout)
+
 
         # Выпадающий список для клавиши
         key_label = QLabel("Клавиша:")
@@ -145,6 +148,23 @@ class SettingsWindow(QDialog):
         layout.addWidget(hotkey_group)
 
         # Группа настроек поведения
+        # Группа настроек внешнего вида
+        appearance_group = QGroupBox("Внешний вид")
+        appearance_layout = QVBoxLayout()
+        appearance_layout.setSpacing(10)
+
+        # Настройка темы
+        theme_label = QLabel("Тема:")
+        theme_label.setStyleSheet("color: #444; font-weight: bold;")
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems(["Системная", "Светлая", "Темная"])
+        
+        appearance_layout.addWidget(theme_label)
+        appearance_layout.addWidget(self.theme_combo)
+        appearance_group.setLayout(appearance_layout)
+        layout.addWidget(appearance_group)
+
+        # Группа настроек поведения
         behavior_group = QGroupBox("Поведение")
         behavior_layout = QVBoxLayout()
         behavior_layout.setSpacing(10)
@@ -208,8 +228,9 @@ class SettingsWindow(QDialog):
         layout.addWidget(models_group)
 
         # Устанавливаем контент в область прокрутки
-        scroll_area.setWidget(content_widget)
-        main_layout.addWidget(scroll_area)
+        # scroll_area.setWidget(content_widget)
+        # main_layout.addWidget(scroll_area)
+        main_layout.addWidget(content_widget)
 
         # Кнопки "Ок" и "Отмена" в горизонтальном layout
         buttons_layout = QHBoxLayout()
@@ -228,6 +249,22 @@ class SettingsWindow(QDialog):
         main_layout.addLayout(buttons_layout)
 
         self.load_settings()
+        self.apply_theme()
+
+    # def apply_theme(self):
+    #     """Применяет текущую тему к окну."""
+    #     theme_mode = self.settings_manager.get_theme()
+    #     self.setStyleSheet(get_style(theme_mode))
+    def apply_theme(self):
+        """Применяет текущую тему к окну и всем его элементам."""
+        theme_mode = self.settings_manager.get_theme()
+        style = get_style(theme_mode)
+        
+        # Применяем стили ко всему окну и его элементам
+        self.setStyleSheet(style)
+        
+        # Обновляем все элементы, которые могут требовать перерисовки
+        self.update()
 
     def load_settings(self):
         """Загружает настройки."""
@@ -244,6 +281,15 @@ class SettingsWindow(QDialog):
         start_minimized, minimize_to_tray = self.settings_manager.get_behavior()
         self.start_minimized_checkbox.setChecked(start_minimized)
         self.minimize_to_tray_checkbox.setChecked(minimize_to_tray)
+
+        # Загрузка настроек темы
+        theme_mode = self.settings_manager.get_theme()
+        theme_index = {
+            "system": 0,
+            "light": 1,
+            "dark": 2
+        }.get(theme_mode, 0)
+        self.theme_combo.setCurrentIndex(theme_index)
 
         # Загрузка списка языков
         available_languages, _ = self.settings_manager.get_languages()
@@ -295,6 +341,19 @@ class SettingsWindow(QDialog):
             self.start_minimized_checkbox.isChecked(),
             self.minimize_to_tray_checkbox.isChecked(),
         )
+
+        # Сохранение настроек темы
+        theme_mode = {
+            0: "system",
+            1: "light",
+            2: "dark"
+        }.get(self.theme_combo.currentIndex(), "system")
+        self.settings_manager.set_theme(theme_mode)
+
+        # Применяем новую тему
+        self.apply_theme()
+        # Применяем тему к главному окну
+        self.main_window.setStyleSheet(get_style(theme_mode))
 
         # Сохранение списка языков
         languages = [

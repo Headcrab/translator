@@ -14,13 +14,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import pyqtSignal, Qt, QSize
 from settings_manager import SettingsManager
-from .styles import (
-    COMMON_STYLE,
-    TOOL_BUTTON_STYLE,
-    TEXT_EDIT_STYLE,
-    GROUP_BOX_STYLE,
-    LABEL_STYLE,
-)
+from .styles import get_style
 from .settings_window import SettingsWindow
 
 
@@ -36,7 +30,7 @@ class MainWindow(QMainWindow):
         self.settings_manager = SettingsManager()
 
         self.setWindowTitle("Мое Python-приложение (PyQt)")
-        self.setStyleSheet(COMMON_STYLE)
+        self.apply_theme()
 
         # Устанавливаем геометрию из настроек
         x, y, width, height = self.settings_manager.get_window_geometry()
@@ -72,7 +66,7 @@ class MainWindow(QMainWindow):
         )
         settings_button.setIconSize(QSize(20, 20))
         settings_button.setFixedSize(32, 32)
-        settings_button.setStyleSheet(TOOL_BUTTON_STYLE)
+        self.apply_theme()
         settings_button.setToolTip("Настройки")
         settings_button.clicked.connect(self.open_settings)
 
@@ -83,13 +77,13 @@ class MainWindow(QMainWindow):
         )
         translate_button.setIconSize(QSize(20, 20))
         translate_button.setFixedSize(32, 32)
-        translate_button.setStyleSheet(TOOL_BUTTON_STYLE)
+        self.apply_theme()
         translate_button.setToolTip("Перевести")
         translate_button.clicked.connect(self.translate_text)
 
         # Дропбокс выбора языка
         language_label = QLabel("Язык:", self)
-        language_label.setStyleSheet(LABEL_STYLE)
+        self.apply_theme()
         self.language_combo = QComboBox(self)
         self.language_combo.setMinimumWidth(120)
         available_languages, current_language = self.settings_manager.get_languages()
@@ -99,7 +93,7 @@ class MainWindow(QMainWindow):
 
         # Дропбокс выбора модели
         model_label = QLabel("Модель:", self)
-        model_label.setStyleSheet(LABEL_STYLE)
+        self.apply_theme()
         self.model_combo = QComboBox(self)
         self.model_combo.setMinimumWidth(150)
         self.update_model_combo()
@@ -116,7 +110,7 @@ class MainWindow(QMainWindow):
 
         # Создаем центральный виджет и его layout
         central_widget = QWidget(self)
-        central_widget.setStyleSheet("QWidget { background-color: #f5f5f5; }")
+        self.apply_theme()
         central_layout = QVBoxLayout(central_widget)
         central_layout.setContentsMargins(10, 0, 10, 10)
         central_layout.setSpacing(8)
@@ -130,23 +124,23 @@ class MainWindow(QMainWindow):
 
         # Группа для исходного текста
         source_group = QGroupBox("Исходный текст")
-        source_group.setStyleSheet(GROUP_BOX_STYLE)
+        self.apply_theme()
         source_layout = QVBoxLayout(source_group)
         source_layout.setContentsMargins(8, 8, 8, 8)
 
         self.text_edit = QTextEdit(self)
-        self.text_edit.setStyleSheet(TEXT_EDIT_STYLE)
+        self.apply_theme()
         source_layout.addWidget(self.text_edit)
         texts_layout.addWidget(source_group)
 
         # Группа для переведенного текста
         translated_group = QGroupBox("Переведенный текст")
-        translated_group.setStyleSheet(GROUP_BOX_STYLE)
+        self.apply_theme()
         translated_layout = QVBoxLayout(translated_group)
         translated_layout.setContentsMargins(8, 8, 8, 8)
 
         self.translated_text = QTextEdit(self)
-        self.translated_text.setStyleSheet(TEXT_EDIT_STYLE)
+        self.apply_theme()
         self.translated_text.setReadOnly(True)  # Делаем поле только для чтения
         translated_layout.addWidget(self.translated_text)
         texts_layout.addWidget(translated_group)
@@ -230,3 +224,14 @@ class MainWindow(QMainWindow):
     def update_translated_text(self, text):
         """Обновляет поле с переведенным текстом."""
         self.translated_text.setText(text)
+
+    def apply_theme(self):
+        """Применяет текущую тему к окну и всем его элементам."""
+        theme_mode = self.settings_manager.get_theme()
+        style = get_style(theme_mode)
+        
+        # Применяем стили ко всему окну и его элементам
+        self.setStyleSheet(style)
+        
+        # Обновляем все элементы, которые могут требовать перерисовки
+        self.update()
