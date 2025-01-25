@@ -11,11 +11,14 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QLabel,
     QGroupBox,
+    QMessageBox,
 )
 from PyQt5.QtCore import pyqtSignal, Qt, QSize
 from settings_manager import SettingsManager
 from .styles import get_style
 from .settings_window import SettingsWindow
+from llm_api import LLMApi
+import asyncio
 
 
 class MainWindow(QMainWindow):
@@ -157,16 +160,48 @@ class MainWindow(QMainWindow):
         if current_model:
             self.model_combo.setCurrentText(current_model)
 
-    def translate_text(self):
-        """Обработчик нажатия кнопки перевода."""
+    async def _do_translate(self):
+        """Выполняет перевод текста."""
         source_text = self.text_edit.toPlainText()
         if not source_text:
             return
+            
+        # Получаем информацию о текущей модели
+        model_info = self.settings_manager.get_model_info()
+        if not model_info:
+            QMessageBox.warning(self, "Ошибка", "Не выбрана модель для перевода")
+            return
+            
+        # Проверяем наличие токена доступа
+        if not model_info.get("access_token"):
+            QMessageBox.warning(
+                self, 
+                "Ошибка", 
+                "Не указан токен доступа для модели. Пожалуйста, добавьте токен в настройках."
+            )
+            return
+            
+        try:
+            # Создаем экземпляр API клиента
+            api = LLMApi(model_info)
+            
+            # Получаем целевой язык
+            target_lang = self.language_combo.currentText()
+            
+            # Выполняем перевод
+            translated = await api.translate(source_text, target_lang)
+            
+            # Обновляем поле с переведенным текстом
+            self.update_translated_text(translated)
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", str(e))
 
-        # TODO: Здесь будет логика перевода текста
-        # Пока просто заглушка для демонстрации
-        translated = f"Перевод: {source_text}"
-        self.update_translated_text(translated)
+    def translate_text(self):
+        """Обработчик нажатия кнопки перевода."""
+        # Запускаем асинхронный перевод
+        asyncio.get_event_loop().create_task(self._do_translate())
+        # self._do_translate()
 
     def update_clipboard(self, text):
         """Слот для обновления буфера обмена"""
