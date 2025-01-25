@@ -410,6 +410,20 @@ QToolButton:hover {
 QToolButton:pressed {
     background-color: #4d4d4d;
 }
+
+QProgressBar {
+    border: 1px solid #3A3939;
+    border-radius: 5px;
+    background-color: #201F1F;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: #3DAEE9;
+    width: 10px;
+    margin: 0.5px;
+}
+
 """
 
 def get_style(theme_mode="system"):

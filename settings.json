@@ -1,7 +1,7 @@
 {
     "window": {
-        "x": 804,
-        "y": 278,
+        "x": 1137,
+        "y": 479,
         "width": 726,
         "height": 518
     },
@@ -46,7 +46,7 @@
                 "access_token": "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"
             }
         ],
-        "current": "google/gemini-2.0-flash-exp:free - OpenRouter"
+        "current": "gpt-4o-mini - OpenAI"
     },
     "theme": {
         "mode": "dark"

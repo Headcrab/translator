@@ -156,8 +156,8 @@ class MainWindow(QMainWindow):
 
         # Добавляем прогресс-бар
         self.progress_bar = QProgressBar(self)
-        self.progress_bar.setRange(0, 100)
-        self.progress_bar.setValue(0)
+        self.progress_bar.setRange(0, 0)  # Бесконечная анимация
+        self.progress_bar.setTextVisible(False)  # Скрыть процентный текст
         self.progress_bar.hide()
         central_layout.addWidget(self.progress_bar)
 
