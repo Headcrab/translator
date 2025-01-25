@@ -1,9 +1,9 @@
 {
     "window": {
-        "x": 1459,
-        "y": 415,
-        "width": 313,
-        "height": 518
+        "x": 1121,
+        "y": 761,
+        "width": 637,
+        "height": 209
     },
     "hotkey": {
         "modifiers": [
@@ -12,7 +12,7 @@
         "key": "C"
     },
     "behavior": {
-        "start_minimized": true,
+        "start_minimized": false,
         "minimize_to_tray_on_close": true
     },
     "languages": {
@@ -22,7 +22,7 @@
             "Казахский",
             "Суахили"
         ],
-        "current": "Английский"
+        "current": "Русский"
     },
     "models": {
         "available": [
@@ -39,6 +39,6 @@
                 "model_name": "gpt-4o"
             }
         ],
-        "current": "gpt-4o-mini - OpenAI"
+        "current": "gpt-4o - OpenAI"
     }
 }
