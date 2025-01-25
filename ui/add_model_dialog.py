@@ -16,12 +16,13 @@ from .styles import get_style
 class AddModelDialog(QDialog):
     """Диалоговое окно для добавления новой модели."""
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, main_window):
+        self.main_window = main_window
+        super().__init__(main_window)  # Указываем родительское окно
         self.settings_manager = SettingsManager()
 
         self.setWindowTitle("Добавить модель")
-        self.setFixedSize(400, 300)
+        self.setFixedSize(400, 360)
         self.center_relative_to_parent()
         self.apply_theme()
 

@@ -13,13 +13,13 @@ from PyQt5.QtWidgets import (
     QGroupBox,
     QMessageBox,
     QProgressBar,
+    QDialog,
 )
 from PyQt5.QtCore import pyqtSignal, Qt, QSize
 from settings_manager import SettingsManager
 from .styles import get_style
 from .settings_window import SettingsWindow
 from llm_api import LLMApi
-import asyncio
 import os
 from qasync import asyncSlot
 
@@ -277,7 +277,8 @@ class MainWindow(QMainWindow):
 
     def open_settings(self):
         """Открывает окно настроек."""
-        self.settings_window.show()
+        if self.settings_window.exec_() == QDialog.Accepted:
+            self.settings_window.load_settings()
 
     def on_language_changed(self, language):
         """Обработчик изменения языка в дропбоксе."""

@@ -169,7 +169,7 @@ QListWidget::item:selected {
 
 DARK_STYLE = """
 QDialog, QMainWindow {
-    background-color: #1e1e1e;
+    background-color: #2d2d2d;
     color: #ffffff;
     border: 1px solid #333;
 }
@@ -448,3 +448,70 @@ def get_style(theme_mode="system"):
     tool_button_style = TOOL_BUTTON_DARK_STYLE if is_dark else TOOL_BUTTON_LIGHT_STYLE
     
     return main_style + "\n" + tool_button_style
+
+def get_tab_style(theme_mode: str) -> str:
+    """Возвращает стили для вкладок в зависимости от темы"""
+    if theme_mode == "dark":
+        return """
+            QTabWidget::pane {
+                border: 1px solid #444;
+                background: #2d2d2d;
+            }
+            QTabWidget::tab-bar {
+                left: 5px;
+            }
+            QTabBar::tab {
+                background: #383838;
+                color: #fff;
+                padding: 8px 12px;
+                margin-right: 2px;
+                border: 1px solid #444;
+                border-bottom: none;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+            }
+            QTabBar::tab:selected {
+                background: #2d2d2d;
+                border-bottom: none;
+            }
+            QTabBar::tab:!selected {
+                margin-top: 2px;
+            }
+        """
+    elif theme_mode == "light":
+        return """
+            QTabWidget::pane {
+                border: 1px solid #ccc;
+                background: #fff;
+            }
+            QTabWidget::tab-bar {
+                left: 5px;
+            }
+            QTabBar::tab {
+                background: #f0f0f0;
+                color: #333;
+                padding: 8px 12px;
+                margin-right: 2px;
+                border: 1px solid #ccc;
+                border-bottom: none;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+            }
+            QTabBar::tab:selected {
+                background: #fff;
+                border-bottom: none;
+            }
+            QTabBar::tab:!selected {
+                margin-top: 2px;
+            }
+        """
+    else:  # system
+        return """
+            QTabWidget::tab-bar {
+                left: 5px;
+            }
+            QTabBar::tab {
+                padding: 8px 12px;
+                margin-right: 2px;
+            }
+        """

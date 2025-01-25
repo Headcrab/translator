@@ -287,3 +287,12 @@ class SettingsManager:
     def set_system_prompt(self, prompt):
         self.settings['system_prompt'] = prompt
         self.save_settings()
+
+    def get_settings_window_geometry(self):
+        """Возвращает сохраненную геометрию окна настроек."""
+        return self.settings.get("settings_window_geometry", (100, 100, 400, 300))
+
+    def set_settings_window_geometry(self, x, y, width, height):
+        """Сохраняет геометрию окна настроек."""
+        self.settings["settings_window_geometry"] = (x, y, width, height)
+        self.save_settings()

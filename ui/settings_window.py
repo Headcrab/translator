@@ -11,15 +11,13 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QPushButton,
     QTextEdit,
-    QScrollArea,
     QMessageBox,
     QListWidget,
     QLineEdit,
     QToolButton,
     QTabWidget,
+    QMainWindow,
 )
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt
 from settings_manager import SettingsManager
 from hotkeys import register_global_hotkeys, unregister_global_hotkeys
 from .styles import get_style
@@ -29,19 +27,21 @@ from .add_model_dialog import AddModelDialog
 class SettingsWindow(QDialog):
     """Окно настроек."""
 
-    def __init__(self, main_window):
-        self.main_window = main_window
-        super().__init__(main_window)  # Указываем родительское окно
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.settings_manager = SettingsManager()
-
+        
+        # Восстановление геометрии
+        x, y, w, h = self.settings_manager.get_settings_window_geometry()
+        self.setGeometry(x, y, w, h)
+        
         self.setWindowTitle("Настройки")
-        self.setGeometry(200, 200, 450, 500)
+        # self.apply_theme()
         self.center_relative_to_parent()
-        self.apply_theme()
 
         # Создаем основной layout
         main_layout = QVBoxLayout(self)
-        self.apply_theme()
+        # self.apply_theme()
         main_layout.setSpacing(8)
         main_layout.setContentsMargins(10, 10, 10, 10)
 
@@ -363,71 +363,8 @@ class SettingsWindow(QDialog):
         
         # Стилизация вкладок
         if hasattr(self, 'tab_widget'):
-            if theme_mode == "dark":
-                tab_style = """
-                    QTabWidget::pane {
-                        border: 1px solid #444;
-                        background: #2d2d2d;
-                    }
-                    QTabWidget::tab-bar {
-                        left: 5px;
-                    }
-                    QTabBar::tab {
-                        background: #383838;
-                        color: #fff;
-                        padding: 8px 12px;
-                        margin-right: 2px;
-                        border: 1px solid #444;
-                        border-bottom: none;
-                        border-top-left-radius: 4px;
-                        border-top-right-radius: 4px;
-                    }
-                    QTabBar::tab:selected {
-                        background: #2d2d2d;
-                        border-bottom: none;
-                    }
-                    QTabBar::tab:!selected {
-                        margin-top: 2px;
-                    }
-                """
-            elif theme_mode == "light":
-                tab_style = """
-                    QTabWidget::pane {
-                        border: 1px solid #ccc;
-                        background: #fff;
-                    }
-                    QTabWidget::tab-bar {
-                        left: 5px;
-                    }
-                    QTabBar::tab {
-                        background: #f0f0f0;
-                        color: #333;
-                        padding: 8px 12px;
-                        margin-right: 2px;
-                        border: 1px solid #ccc;
-                        border-bottom: none;
-                        border-top-left-radius: 4px;
-                        border-top-right-radius: 4px;
-                    }
-                    QTabBar::tab:selected {
-                        background: #fff;
-                        border-bottom: none;
-                    }
-                    QTabBar::tab:!selected {
-                        margin-top: 2px;
-                    }
-                """
-            else:  # system
-                tab_style = """
-                    QTabWidget::tab-bar {
-                        left: 5px;
-                    }
-                    QTabBar::tab {
-                        padding: 8px 12px;
-                        margin-right: 2px;
-                    }
-                """
-            
+            from ui.styles import get_tab_style
+            tab_style = get_tab_style(theme_mode)
             self.tab_widget.setStyleSheet(tab_style)
         
         # Обновляем все элементы, которые могут требовать перерисовки
@@ -476,6 +413,11 @@ class SettingsWindow(QDialog):
 
     def closeEvent(self, event):
         """Переопределяем поведение при закрытии окна настроек."""
+        # Сохранение геометрии
+        geom = self.geometry()
+        self.settings_manager.set_settings_window_geometry(
+            geom.x(), geom.y(), geom.width(), geom.height()
+        )
         event.ignore()
         self.hide()
 
@@ -511,8 +453,6 @@ class SettingsWindow(QDialog):
 
         # Применяем новую тему
         self.apply_theme()
-        # Применяем тему к главному окну
-        self.main_window.setStyleSheet(get_style(theme_mode))
 
         # Сохранение списка языков
         languages = []
@@ -520,19 +460,27 @@ class SettingsWindow(QDialog):
             languages.append(self.languages_list.item(i).text().strip())
         self.settings_manager.set_available_languages(languages)
 
-        # Обновляем список языков в главном окне
-        self.main_window.language_combo.clear()
-        self.main_window.language_combo.addItems(languages)
-
-        # Обновление хоткеев
-        unregister_global_hotkeys()
-        hotkey_str = "+".join(modifiers) + "+" + key if modifiers else key
-        register_global_hotkeys(self.main_window, hotkey_str)
+        # Обновляем список языков через родительское окно
+        parent = self.parent()
+        if isinstance(parent, QMainWindow):  # Проверяем, что parent является главным окном
+            parent.language_combo.clear()
+            parent.language_combo.addItems(languages)
+        
+        # Обновление хоткеев через родительское окно
+        if parent:
+            unregister_global_hotkeys()
+            hotkey_str = "+".join(modifiers) + "+" + key if modifiers else key
+            register_global_hotkeys(parent, hotkey_str)
 
         # Добавляем сохранение системного промпта
         self.settings_manager.set_system_prompt(self.system_prompt_edit.toPlainText())
 
         self.hide()
+
+        # Обновляем список моделей в главном окне через родительское окно
+        if self.parent():
+            self.parent().update_model_combo()
+            self.parent().apply_theme()
 
     def add_model(self):
         """Открывает диалог добавления модели."""
@@ -552,7 +500,7 @@ class SettingsWindow(QDialog):
 
                 # Обновляем список моделей
                 self.load_settings()
-                self.main_window.update_model_combo()
+                self.parent().update_model_combo()
             else:
                 QMessageBox.warning(self, "Ошибка", "Все поля должны быть заполнены")
 
@@ -572,8 +520,8 @@ class SettingsWindow(QDialog):
             if reply == QMessageBox.Yes:
                 self.settings_manager.remove_model(model_name)
                 self.load_settings()
-                # Обновляем список моделей в главном окне
-                self.main_window.update_model_combo()
+                # Обновляем список моделей в главном окне через родительское окно
+                self.parent().update_model_combo()
 
     def add_language(self):
         """Добавляет новый язык."""
@@ -582,10 +530,10 @@ class SettingsWindow(QDialog):
             self.settings_manager.add_language(language)
             self.load_settings()
             self.language_edit.clear()
-            # Обновляем список языков в главном окне
-            self.main_window.language_combo.clear()
+            # Обновляем список языков через родительское окно
+            self.parent().language_combo.clear()
             available_languages, _ = self.settings_manager.get_languages()
-            self.main_window.language_combo.addItems(available_languages)
+            self.parent().language_combo.addItems(available_languages)
 
     def edit_language(self):
         """Редактирует выбранный язык."""
@@ -597,10 +545,10 @@ class SettingsWindow(QDialog):
                 self.settings_manager.edit_language(current_language, new_language)
                 self.load_settings()
                 self.language_edit.clear()
-                # Обновляем список языков в главном окне
-                self.main_window.language_combo.clear()
+                # Обновляем список языков через родительское окно
+                self.parent().language_combo.clear()
                 available_languages, _ = self.settings_manager.get_languages()
-                self.main_window.language_combo.addItems(available_languages)
+                self.parent().language_combo.addItems(available_languages)
 
     def delete_language(self):
         """Удаляет выбранный язык."""
@@ -619,10 +567,10 @@ class SettingsWindow(QDialog):
                 self.settings_manager.delete_language(language)
                 self.load_settings()
                 self.languages_list.takeItem(self.languages_list.currentRow())
-                # Обновляем список языков в главном окне
-                self.main_window.language_combo.clear()
+                # Обновляем список языков через родительское окно
+                self.parent().language_combo.clear()
                 available_languages, _ = self.settings_manager.get_languages()
-                self.main_window.language_combo.addItems(available_languages)
+                self.parent().language_combo.addItems(available_languages)
 
     def edit_model(self):
         """Редактирует выбранную модель."""
@@ -656,8 +604,8 @@ class SettingsWindow(QDialog):
                             model_data["access_token"],
                         )
                         self.load_settings()
-                        # Обновляем список моделей в главном окне
-                        self.main_window.update_model_combo()
+                        # Обновляем список моделей через родительское окно
+                        self.parent().update_model_combo()
 
     def center_relative_to_parent(self):
         """Центрирует окно относительно родительского окна."""

@@ -7,7 +7,6 @@ from ui.main_window import MainWindow
 from system_tray import SystemTrayHandler
 from hotkeys import register_global_hotkeys
 from settings_manager import SettingsManager
-from background_tasks import perform_translation
 from qasync import QEventLoop
 
 
