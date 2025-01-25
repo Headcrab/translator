@@ -2,7 +2,7 @@ import sys
 import traceback
 import threading
 from PyQt5.QtWidgets import QApplication
-from gui import MainWindow
+from ui import MainWindow
 from system_tray import SystemTrayHandler
 from hotkeys import register_global_hotkeys
 from settings_manager import SettingsManager

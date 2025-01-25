@@ -128,7 +128,7 @@ class SettingsManager:
 
     def add_model(self, name, provider, api_endpoint, model_name, access_token=None):
         """Добавляет новую модель в список доступных.
-        
+
         Args:
             name: Имя модели
             provider: Провайдер модели
@@ -192,24 +192,26 @@ class SettingsManager:
 
     def get_model_info(self, model_name=None):
         """Возвращает информацию о модели.
-        
+
         Args:
             model_name: Имя модели. Если не указано, возвращает информацию о текущей модели.
-            
+
         Returns:
             dict: Информация о модели (name, provider, api_endpoint, model_name, access_token)
             или None, если модель не найдена
         """
         if "models" not in self.settings:
             return None
-        
+
         if model_name is None:
             model_name = self.settings["models"].get("current")
             if model_name is None:
                 return None
-        
+
         for model in self.settings["models"]["available"]:
             if model["name"] == model_name:
-                return model.copy()  # Возвращаем копию, чтобы избежать случайных изменений
-        
+                return (
+                    model.copy()
+                )  # Возвращаем копию, чтобы избежать случайных изменений
+
         return None
