@@ -6,11 +6,12 @@ import aiohttp
 import asyncio
 from typing import Optional, Dict, Any
 import requests
+from settings_manager import SettingsManager
 
 class LLMApi:
     """Класс для работы с API различных LLM моделей."""
     
-    def __init__(self, model_info: Dict[str, Any]):
+    def __init__(self, model_info: Dict[str, Any], settings_manager: SettingsManager):
         """
         Инициализация клиента API.
         
@@ -23,6 +24,7 @@ class LLMApi:
                 - access_token: Токен доступа к API
         """
         self.model_info = model_info
+        self.settings_manager = settings_manager
         self.provider = model_info["provider"]
         self.api_endpoint = model_info["api_endpoint"]
         self.model_name = model_info["model_name"]
@@ -45,21 +47,32 @@ class LLMApi:
         if not text:
             return ""
             
-        prompt = f"Переведи следующий текст на язык {target_lang}. Сохрани разметку и форматирование. Текст:\n\n{text}"
+        system_prompt = self.settings_manager.get_system_prompt()
+        
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt.format(language=target_lang)
+            },
+            {
+                "role": "user", 
+                "content": text
+            }
+        ]
         
         try:
             if self.provider == "OpenAI":
-                return await self._translate_openai(prompt)
+                return await self._translate_openai(messages)
             elif self.provider == "Anthropic":
-                return await self._translate_anthropic(prompt)
+                return await self._translate_anthropic(messages)
             elif self.provider == "OpenRouter":
-                return await self._translate_openrouter(prompt)
+                return await self._translate_openrouter(messages)
             else:
                 raise ValueError(f"Неподдерживаемый провайдер: {self.provider}")
         except Exception as e:
             raise Exception(f"Ошибка при переводе: {str(e)}")
             
-    async def _translate_openai(self, prompt: str) -> str:
+    async def _translate_openai(self, messages: list) -> str:
         """Перевод через OpenAI API."""
         headers = {
             "Content-Type": "application/json",
@@ -68,9 +81,7 @@ class LLMApi:
         
         data = {
             "model": self.model_name,
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
+            "messages": messages,
             "temperature": 0.7
         }
         
@@ -87,7 +98,7 @@ class LLMApi:
                 result = await response.json()
                 return result["choices"][0]["message"]["content"].strip()
                 
-    async def _translate_anthropic(self, prompt: str) -> str:
+    async def _translate_anthropic(self, messages: list) -> str:
         """Перевод через Anthropic API."""
         headers = {
             "Content-Type": "application/json",
@@ -96,7 +107,7 @@ class LLMApi:
         
         data = {
             "model": self.model_name,
-            "prompt": f"\n\nHuman: {prompt}\n\nAssistant:",
+            "prompt": f"\n\nHuman: {messages[-1]['content']}\n\nAssistant:",
             "max_tokens_to_sample": 1000
         }
         
@@ -113,7 +124,7 @@ class LLMApi:
                 result = await response.json()
                 return result["completion"].strip()
                 
-    async def _translate_openrouter(self, prompt: str) -> str:
+    async def _translate_openrouter(self, messages: list) -> str:
         """Перевод через OpenRouter API."""
         headers = {
             "Content-Type": "application/json",
@@ -122,9 +133,7 @@ class LLMApi:
         
         data = {
             "model": self.model_name,
-            "messages": [
-                {"role": "user", "content": prompt}
-            ]
+            "messages": messages
         }
         
         async with aiohttp.ClientSession() as session:
@@ -149,4 +158,5 @@ def translate(text):
     except requests.RequestException as e:
         # Логирование ошибки
         print(f"Ошибка при переводе: {e}")
-        return "Ошибка перевода" 
+        return "Ошибка перевода"
+

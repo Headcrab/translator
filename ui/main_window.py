@@ -65,17 +65,6 @@ class MainWindow(QMainWindow):
         top_layout.setContentsMargins(10, 10, 10, 5)
         top_layout.setSpacing(5)
 
-        # Кнопка для открытия окна настроек
-        settings_button = QToolButton(self)
-        settings_button.setIcon(
-            self.style().standardIcon(self.style().SP_DialogOpenButton)
-        )
-        settings_button.setIconSize(QSize(20, 20))
-        settings_button.setFixedSize(32, 32)
-        self.apply_theme()
-        settings_button.setToolTip("Настройки")
-        settings_button.clicked.connect(self.open_settings)
-
         # Кнопка для перевода текста
         translate_button = QToolButton(self)
         translate_button.setIcon(
@@ -105,14 +94,27 @@ class MainWindow(QMainWindow):
         self.update_model_combo()
         self.model_combo.currentTextChanged.connect(self.on_model_changed)
 
-        # Добавляем виджеты в верхний layout
-        top_layout.addWidget(settings_button)
+        # Восстанавливаем блок создания кнопки настроек
+        # Кнопка для открытия окна настроек
+        settings_button = QToolButton(self)
+        settings_button.setIcon(
+            self.style().standardIcon(self.style().SP_DialogOpenButton)
+        )
+        settings_button.setIconSize(QSize(20, 20))
+        settings_button.setFixedSize(32, 32)
+        self.apply_theme()
+        settings_button.setToolTip("Настройки")
+        settings_button.clicked.connect(self.open_settings)
+
+        # Изменяем порядок добавления виджетов в верхний layout
         top_layout.addWidget(translate_button)
         top_layout.addWidget(language_label)
         top_layout.addWidget(self.language_combo)
         top_layout.addWidget(model_label)
         top_layout.addWidget(self.model_combo)
-        top_layout.addStretch()  # Добавляем растяжку справа
+        top_layout.addStretch()  # Растяжка перед кнопкой настроек
+        top_layout.addWidget(settings_button)
+
 
         # Создаем центральный виджет и его layout
         central_widget = QWidget(self)
@@ -195,7 +197,7 @@ class MainWindow(QMainWindow):
             
         try:
             # Создаем экземпляр API клиента
-            api = LLMApi(model_info)
+            api = LLMApi(model_info, self.settings_manager)
             
             # Получаем целевой язык
             target_lang = self.language_combo.currentText()
@@ -223,13 +225,13 @@ class MainWindow(QMainWindow):
                 self.show_error_message("Модель перевода не выбрана")
                 return
             
-            llm = LLMApi(model_info)
+            llm_api = LLMApi(model_info, self.settings_manager)
             target_lang = self.language_combo.currentText()
             if not model_info.get("access_token"):
                 self.show_error_message("Токен доступа не настроен")
                 return
             
-            translated = await llm.translate(text, target_lang)
+            translated = await llm_api.translate(text, target_lang)
             if not translated:
                 raise ValueError("Пустой ответ от модели")
             
@@ -318,5 +320,5 @@ class MainWindow(QMainWindow):
             "access_token": os.getenv("OPENAI_API_KEY")
         }
         
-        llm = LLMApi(model_info)
+        llm = LLMApi(model_info, self.settings_manager)
         return await llm.translate(text, target_lang)

@@ -222,7 +222,7 @@ QGroupBox::title {
     left: 10px;
     padding: 0 5px;
     color: #ffffff;
-    background-color: #1e1e1e;
+    background-color: #2d2d2d;
 }
 
 QPushButton {

@@ -189,6 +189,16 @@ class SettingsWindow(QDialog):
         behavior_group.setLayout(behavior_layout)
         layout.addWidget(behavior_group)
 
+        # Добавляем новую группу для системного промпта
+        prompt_group = QGroupBox("Системный промпт")
+        prompt_layout = QVBoxLayout()
+        self.system_prompt_edit = QTextEdit()
+        self.system_prompt_edit.setPlaceholderText("Введите системный промпт для перевода...")
+        self.system_prompt_edit.setMaximumHeight(100)
+        prompt_layout.addWidget(self.system_prompt_edit)
+        prompt_group.setLayout(prompt_layout)
+        system_layout.addWidget(prompt_group)  # Добавляем в system_layout после behavior_group
+
         # Группа настроек языков
         languages_group = QGroupBox("Языки")
         languages_layout = QVBoxLayout()
@@ -314,6 +324,7 @@ class SettingsWindow(QDialog):
         system_layout.addWidget(hotkey_group)
         system_layout.addWidget(appearance_group)
         system_layout.addWidget(behavior_group)
+        system_layout.addWidget(prompt_group)
         system_layout.addStretch()
         
         # Добавляем вкладки в виджет вкладок
@@ -459,6 +470,10 @@ class SettingsWindow(QDialog):
         for model in available_models:
             self.models_list.addItem(model['name'])
 
+        # Добавляем загрузку системного промпта
+        system_prompt = self.settings_manager.get_system_prompt()
+        self.system_prompt_edit.setPlainText(system_prompt)
+
     def closeEvent(self, event):
         """Переопределяем поведение при закрытии окна настроек."""
         event.ignore()
@@ -513,6 +528,9 @@ class SettingsWindow(QDialog):
         unregister_global_hotkeys()
         hotkey_str = "+".join(modifiers) + "+" + key if modifiers else key
         register_global_hotkeys(self.main_window, hotkey_str)
+
+        # Добавляем сохранение системного промпта
+        self.settings_manager.set_system_prompt(self.system_prompt_edit.toPlainText())
 
         self.hide()
 

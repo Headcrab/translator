@@ -1,8 +1,8 @@
 {
     "window": {
-        "x": 1137,
-        "y": 479,
-        "width": 726,
+        "x": 933,
+        "y": 485,
+        "width": 778,
         "height": 518
     },
     "hotkey": {
@@ -18,9 +18,10 @@
     "languages": {
         "available": [
             "Русский",
-            "Английский"
+            "Английский",
+            "Русский матерный"
         ],
-        "current": "Русский"
+        "current": "Английский"
     },
     "models": {
         "available": [
@@ -46,9 +47,10 @@
                 "access_token": "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"
             }
         ],
-        "current": "gpt-4o-mini - OpenAI"
+        "current": "google/gemini-2.0-flash-exp:free - OpenRouter"
     },
     "theme": {
         "mode": "dark"
-    }
+    },
+    "system_prompt": "Ты профессиональный переводчик. Переведи текст точно и грамотно на {language}. Сохрани форматирование и терминологию. Не добавляй комментарии."
 }
