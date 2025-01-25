@@ -93,6 +93,24 @@ QComboBox:hover {
     border-color: #007bff;
 }
 
+QComboBox::drop-down {
+    border: none;
+}
+
+QComboBox::down-arrow {
+    color: #444;
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: white;
+    color: #444;
+    border: 1px solid #ddd;
+    selection-background-color: #007bff;
+    selection-color: white;
+}
+
 QTextEdit, QLineEdit {
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -129,6 +147,23 @@ QCheckBox::indicator:checked {
 
 QLabel {
     color: #444;
+}
+
+QListWidget {
+    background-color: white;
+    color: #444;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+QListWidget::item:hover {
+    background-color: #f5f5f5;
+}
+
+QListWidget::item:selected {
+    background-color: #007bff;
+    color: white;
 }
 """
 
@@ -227,6 +262,24 @@ QComboBox:hover {
     border-color: #0d6efd;
 }
 
+QComboBox::drop-down {
+    border: none;
+}
+
+QComboBox::down-arrow {
+    color: #ffffff;
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border: 1px solid #444;
+    selection-background-color: #0d6efd;
+    selection-color: #ffffff;
+}
+
 QTextEdit, QLineEdit {
     border: 1px solid #444;
     border-radius: 4px;
@@ -307,6 +360,23 @@ QScrollBar::sub-line:vertical {
 QScrollBar::add-page:vertical,
 QScrollBar::sub-page:vertical {
     background-color: #2d2d2d;
+}
+
+QListWidget {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+QListWidget::item:hover {
+    background-color: #3d3d3d;
+}
+
+QListWidget::item:selected {
+    background-color: #0d6efd;
+    color: #ffffff;
 }
 """
 

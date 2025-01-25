@@ -6,3 +6,4 @@ pystray>=0.19.4
 Pillow>=9.3.0
 ruff>=0.1.0
 darkdetect>=0.8.0
+pywin32>=306

@@ -237,3 +237,44 @@ class SettingsManager:
         
         self.settings["theme"]["mode"] = mode
         self.save_settings()
+
+    def add_language(self, language):
+        """Добавляет новый язык в список доступных."""
+        if "languages" not in self.settings:
+            self.settings["languages"] = {
+                "available": [language],
+                "current": language
+            }
+        else:
+            if language not in self.settings["languages"]["available"]:
+                self.settings["languages"]["available"].append(language)
+        self.save_settings()
+
+    def edit_language(self, old_language, new_language):
+        """Редактирует существующий язык."""
+        if "languages" in self.settings:
+            if old_language in self.settings["languages"]["available"]:
+                index = self.settings["languages"]["available"].index(old_language)
+                self.settings["languages"]["available"][index] = new_language
+                
+                # Если редактируем текущий язык, обновляем его
+                if self.settings["languages"]["current"] == old_language:
+                    self.settings["languages"]["current"] = new_language
+                    
+                self.save_settings()
+
+    def delete_language(self, language):
+        """Удаляет язык из списка доступных."""
+        if "languages" in self.settings:
+            if language in self.settings["languages"]["available"]:
+                self.settings["languages"]["available"].remove(language)
+                
+                # Если удаляем текущий язык, меняем на первый доступный
+                if self.settings["languages"]["current"] == language:
+                    self.settings["languages"]["current"] = (
+                        self.settings["languages"]["available"][0]
+                        if self.settings["languages"]["available"]
+                        else "ru"
+                    )
+                    
+                self.save_settings()
