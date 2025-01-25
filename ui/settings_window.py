@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (
     QListWidget,
     QLineEdit,
     QToolButton,
+    QTabWidget,
 )
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
@@ -30,11 +31,12 @@ class SettingsWindow(QDialog):
 
     def __init__(self, main_window):
         self.main_window = main_window
-        super().__init__()
+        super().__init__(main_window)  # Указываем родительское окно
         self.settings_manager = SettingsManager()
 
         self.setWindowTitle("Настройки")
-        self.setGeometry(200, 200, 450, 800)
+        self.setGeometry(200, 200, 450, 500)
+        self.center_relative_to_parent()
         self.apply_theme()
 
         # Создаем основной layout
@@ -43,13 +45,18 @@ class SettingsWindow(QDialog):
         main_layout.setSpacing(8)
         main_layout.setContentsMargins(10, 10, 10, 10)
 
-        # Создаем область прокрутки
-        # scroll_area = QScrollArea()
-        # scroll_area.setWidgetResizable(True)
-        # scroll_area.setFrameShape(QScrollArea.NoFrame)
-        # scroll_area.setStyleSheet("background-color: #2d2d2d;")
-
-        # Создаем контейнер для содержимого
+        # Создаем виджет вкладок
+        self.tab_widget = QTabWidget()
+        
+        # Создаем вкладки
+        general_tab = QWidget()
+        system_tab = QWidget()
+        
+        # Создаем layouts для вкладок
+        general_layout = QVBoxLayout(general_tab)
+        system_layout = QVBoxLayout(system_tab)
+        
+        # Создаем контент для вкладок
         content_widget = QWidget()
         layout = QVBoxLayout(content_widget)
         layout.setSpacing(8)
@@ -296,10 +303,25 @@ class SettingsWindow(QDialog):
         models_group.setLayout(models_layout)
         layout.addWidget(models_group)
 
-        # Устанавливаем контент в область прокрутки
-        # scroll_area.setWidget(content_widget)
-        # main_layout.addWidget(scroll_area)
-        main_layout.addWidget(content_widget)
+        # Распределяем группы по вкладкам
+        
+        # Вкладка "Общие"
+        general_layout.addWidget(languages_group)
+        general_layout.addWidget(models_group)
+        general_layout.addStretch()
+        
+        # Вкладка "Системные"
+        system_layout.addWidget(hotkey_group)
+        system_layout.addWidget(appearance_group)
+        system_layout.addWidget(behavior_group)
+        system_layout.addStretch()
+        
+        # Добавляем вкладки в виджет вкладок
+        self.tab_widget.addTab(general_tab, "Общие")
+        self.tab_widget.addTab(system_tab, "Системные")
+        
+        # Добавляем виджет вкладок в основной layout
+        main_layout.addWidget(self.tab_widget)
 
         # Кнопки "Ок" и "Отмена" в горизонтальном layout
         buttons_layout = QHBoxLayout()
@@ -320,10 +342,6 @@ class SettingsWindow(QDialog):
         self.load_settings()
         self.apply_theme()
 
-    # def apply_theme(self):
-    #     """Применяет текущую тему к окну."""
-    #     theme_mode = self.settings_manager.get_theme()
-    #     self.setStyleSheet(get_style(theme_mode))
     def apply_theme(self):
         """Применяет текущую тему к окну и всем его элементам."""
         theme_mode = self.settings_manager.get_theme()
@@ -331,6 +349,75 @@ class SettingsWindow(QDialog):
         
         # Применяем стили ко всему окну и его элементам
         self.setStyleSheet(style)
+        
+        # Стилизация вкладок
+        if hasattr(self, 'tab_widget'):
+            if theme_mode == "dark":
+                tab_style = """
+                    QTabWidget::pane {
+                        border: 1px solid #444;
+                        background: #2d2d2d;
+                    }
+                    QTabWidget::tab-bar {
+                        left: 5px;
+                    }
+                    QTabBar::tab {
+                        background: #383838;
+                        color: #fff;
+                        padding: 8px 12px;
+                        margin-right: 2px;
+                        border: 1px solid #444;
+                        border-bottom: none;
+                        border-top-left-radius: 4px;
+                        border-top-right-radius: 4px;
+                    }
+                    QTabBar::tab:selected {
+                        background: #2d2d2d;
+                        border-bottom: none;
+                    }
+                    QTabBar::tab:!selected {
+                        margin-top: 2px;
+                    }
+                """
+            elif theme_mode == "light":
+                tab_style = """
+                    QTabWidget::pane {
+                        border: 1px solid #ccc;
+                        background: #fff;
+                    }
+                    QTabWidget::tab-bar {
+                        left: 5px;
+                    }
+                    QTabBar::tab {
+                        background: #f0f0f0;
+                        color: #333;
+                        padding: 8px 12px;
+                        margin-right: 2px;
+                        border: 1px solid #ccc;
+                        border-bottom: none;
+                        border-top-left-radius: 4px;
+                        border-top-right-radius: 4px;
+                    }
+                    QTabBar::tab:selected {
+                        background: #fff;
+                        border-bottom: none;
+                    }
+                    QTabBar::tab:!selected {
+                        margin-top: 2px;
+                    }
+                """
+            else:  # system
+                tab_style = """
+                    QTabWidget::tab-bar {
+                        left: 5px;
+                    }
+                    QTabBar::tab {
+                        padding: 8px 12px;
+                        margin-right: 2px;
+                    }
+                """
+            
+            self.tab_widget.setStyleSheet(tab_style)
         
         # Обновляем все элементы, которые могут требовать перерисовки
         self.update()
@@ -553,3 +640,19 @@ class SettingsWindow(QDialog):
                         self.load_settings()
                         # Обновляем список моделей в главном окне
                         self.main_window.update_model_combo()
+
+    def center_relative_to_parent(self):
+        """Центрирует окно относительно родительского окна."""
+        if self.parent():
+            parent_geometry = self.parent().geometry()
+            parent_center = parent_geometry.center()
+            
+            # Получаем размеры текущего окна
+            size = self.geometry()
+            
+            # Вычисляем позицию для центрирования
+            x = parent_center.x() - size.width() // 2
+            y = parent_center.y() - size.height() // 2
+            
+            # Перемещаем окно
+            self.move(x, y)

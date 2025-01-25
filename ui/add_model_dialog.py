@@ -21,7 +21,8 @@ class AddModelDialog(QDialog):
         self.settings_manager = SettingsManager()
 
         self.setWindowTitle("Добавить модель")
-        self.setGeometry(200, 200, 350, 220)
+        self.setFixedSize(400, 300)
+        self.center_relative_to_parent()
         self.apply_theme()
 
         layout = QVBoxLayout(self)
@@ -110,3 +111,19 @@ class AddModelDialog(QDialog):
             "model_name": self.model_name_edit.text(),
             "access_token": self.access_token_edit.text(),
         }
+
+    def center_relative_to_parent(self):
+        """Центрирует окно относительно родительского окна."""
+        if self.parent():
+            parent_geometry = self.parent().geometry()
+            parent_center = parent_geometry.center()
+            
+            # Получаем размеры текущего окна
+            size = self.geometry()
+            
+            # Вычисляем позицию для центрирования
+            x = parent_center.x() - size.width() // 2
+            y = parent_center.y() - size.height() // 2
+            
+            # Перемещаем окно
+            self.move(x, y)
