@@ -542,27 +542,22 @@ class SettingsWindow(QDialog):
             self.parent().apply_theme()
 
     def add_model(self):
-        """Открывает диалог добавления модели."""
+        """Открывает диалог добавления новой модели."""
         dialog = AddModelDialog(self)
+        dialog.center_relative_to_parent()
+        dialog.apply_theme()
+        
         if dialog.exec_() == QDialog.Accepted:
-            model_data = dialog.get_model_data()
-
-            # Проверяем, что все поля заполнены
-            if all(value for key, value in model_data.items() if key != 'streaming'):  # Исключаем streaming из проверки
+            model_data = dialog.get_model_info()
+            if model_data:
                 self.settings_manager.add_model(
-                    model_data["name"],
-                    model_data["provider"],
-                    model_data["api_endpoint"],
-                    model_data["model_name"],
-                    model_data["access_token"],
-                    model_data["streaming"]  # Передаем значение streaming
+                    name=model_data["name"],
+                    provider=model_data["provider"],
+                    api_endpoint=model_data["api_endpoint"],
+                    model_name=model_data["model_name"],
+                    access_token=model_data["access_token"]
                 )
-
-                # Обновляем список моделей
-                self.load_settings()
-                self.parent().update_model_combo()
-            else:
-                QMessageBox.warning(self, "Ошибка", "Все поля должны быть заполнены")
+                self.update_models_list()
 
     def remove_model(self):
         """Удаляет выбранную модель."""
@@ -637,7 +632,6 @@ class SettingsWindow(QDialog):
         selected = self.models_list.currentItem()
         if selected:
             current_model_name = selected.text()
-            # Получаем текущие данные модели
             available_models, _ = self.settings_manager.get_models()
             current_model = next((model for model in available_models if model['name'] == current_model_name), None)
             
@@ -648,25 +642,24 @@ class SettingsWindow(QDialog):
                 dialog.provider_combo.setCurrentText(current_model['provider'])
                 dialog.api_endpoint_edit.setText(current_model['api_endpoint'])
                 dialog.model_name_edit.setText(current_model['model_name'])
-                dialog.access_token_edit.setText(current_model.get('access_token', ''))
+                dialog.api_key_edit.setText(current_model.get('access_token', ''))
                 dialog.stream_checkbox.setChecked(current_model.get('streaming', False))
                 
                 if dialog.exec_() == QDialog.Accepted:
-                    model_data = dialog.get_model_data()
-                    if all(value for key, value in model_data.items() if key != 'streaming'):
+                    model_data = dialog.get_model_info()
+                    if model_data:
                         # Удаляем старую модель
                         self.settings_manager.remove_model(current_model_name)
                         # Добавляем новую модель
                         self.settings_manager.add_model(
-                            model_data["name"],
-                            model_data["provider"],
-                            model_data["api_endpoint"],
-                            model_data["model_name"],
-                            model_data["access_token"],
-                            model_data["streaming"]  # Передаем значение streaming
+                            name=model_data["name"],
+                            provider=model_data["provider"],
+                            api_endpoint=model_data["api_endpoint"],
+                            model_name=model_data["model_name"],
+                            access_token=model_data["access_token"],
+                            streaming=model_data["streaming"]
                         )
                         self.load_settings()
-                        # Обновляем список моделей через родительское окно
                         self.parent().update_model_combo()
 
     def center_relative_to_parent(self):
@@ -695,3 +688,9 @@ class SettingsWindow(QDialog):
         # Устанавливаем шрифт и размер в комбобоксы
         self.font_combo.setCurrentFont(current_font)
         self.size_combo.setCurrentText(str(current_font.pointSize()))
+
+    def update_models_list(self):
+        """Обновляет список моделей в интерфейсе."""
+        self.load_settings()  # Перезагружаем все настройки
+        if self.parent():
+            self.parent().update_model_combo()  # Обновляем список в главном окне

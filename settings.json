@@ -1,7 +1,7 @@
 {
     "window": {
-        "x": 303,
-        "y": 87,
+        "x": 256,
+        "y": 154,
         "width": 1370,
         "height": 801
     },
@@ -23,7 +23,7 @@
             "Казахский",
             "Golang"
         ],
-        "current": "Golang"
+        "current": "Русский"
     },
     "models": {
         "available": [
@@ -66,9 +66,17 @@
                 "model_name": "openai/gpt-4o-mini",
                 "access_token": "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",
                 "streaming": true
+            },
+            {
+                "name": "gemini-2.0-flash-exp - Google",
+                "provider": "Google",
+                "api_endpoint": "",
+                "model_name": "gemini-2.0-flash-exp",
+                "access_token": "AIzaSyB3JlIZsL55l-oB-TIWTRjPnjUM0GXH164",
+                "streaming": false
             }
         ],
-        "current": "google/gemini-2.0-flash-exp:free - OpenRouter",
+        "current": "gemini-2.0-flash-exp - Google",
         "system_prompt": "Ты профессиональный переводчик. Переведи текст точно и грамотно на {language}. Сохрани форматирование и терминологию. Не добавляй комментарии.\"",
         "parameters": {
             "stream": true,

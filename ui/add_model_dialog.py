@@ -10,87 +10,89 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QCheckBox,
     QFormLayout,
+    QDialogButtonBox,
 )
+from PyQt5.QtCore import Qt
 from settings_manager import SettingsManager
 from .styles import get_style
+from typing import Dict
 
 
 class AddModelDialog(QDialog):
     """Диалоговое окно для добавления новой модели."""
 
-    def __init__(self, main_window):
-        self.main_window = main_window
-        super().__init__(main_window)  # Указываем родительское окно
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.settings_manager = SettingsManager()
-
+        
         self.setWindowTitle("Добавить модель")
-        self.setFixedSize(400, 360)
-        self.center_relative_to_parent()
-        self.apply_theme()
-
-        layout = QVBoxLayout(self)
-        layout.setSpacing(8)
-        layout.setContentsMargins(10, 10, 10, 10)
-
-        # Словарь провайдеров и их endpoint'ов
-        self.providers = {
-            "OpenAI": "https://api.openai.com/v1",
-            "Anthropic": "https://api.anthropic.com/",
-            "OpenRouter": "https://openrouter.ai/api/v1/chat/completions",
-        }
-
+        
+        layout = QVBoxLayout()
+        
         # Поля ввода
-        self.name_edit = QLineEdit(self)
-        self.provider_combo = QComboBox(self)
-        self.provider_combo.addItems(list(self.providers.keys()))
-        self.provider_combo.currentTextChanged.connect(self.on_provider_changed)
-
-        self.api_endpoint_edit = QLineEdit(self)
-        self.api_endpoint_edit.setText(
-            self.providers[self.provider_combo.currentText()]
-        )
-        self.model_name_edit = QLineEdit(self)
-        self.access_token_edit = QLineEdit(self)
-
-        # Создаем form_layout с QFormLayout
+        self.name_edit = QLineEdit()
+        self.provider_combo = QComboBox()
+        self.provider_combo.addItems([
+            "OpenAI",
+            "Anthropic", 
+            "Google",
+            "OpenRouter"
+        ])
+        
+        self.model_name_edit = QLineEdit()
+        self.api_key_edit = QLineEdit()
+        self.api_endpoint_edit = QLineEdit()
+        self.stream_checkbox = QCheckBox("Использовать потоковый режим")
+        
+        # Добавляем поля в layout
         form_layout = QFormLayout()
-        form_layout.setVerticalSpacing(8)
-
-        # Добавляем элементы через addRow
-        labels = [
-            "Название:", "Провайдер:", "API endpoint:", 
-            "Название модели:", "Токен доступа:"
-        ]
-        widgets = [
-            self.name_edit, self.provider_combo, 
-            self.api_endpoint_edit, self.model_name_edit, 
-            self.access_token_edit
-        ]
+        form_layout.addRow("Название:", self.name_edit)
+        form_layout.addRow("Провайдер:", self.provider_combo)
+        form_layout.addRow("Модель:", self.model_name_edit)
+        form_layout.addRow("API ключ:", self.api_key_edit)
+        form_layout.addRow("API endpoint:", self.api_endpoint_edit)
+        form_layout.addRow(self.stream_checkbox)
         
-        for label_text, widget in zip(labels, widgets):
-            form_layout.addRow(QLabel(label_text), widget)
-        
-        # Добавляем чекбокс потокового вывода
-        self.stream_checkbox = QCheckBox()
-        form_layout.addRow("Потоковый вывод:", self.stream_checkbox)
-        
-        # Добавляем form_layout в основной layout
         layout.addLayout(form_layout)
-
+        
+        # Подсказки для разных провайдеров
+        self.provider_combo.currentTextChanged.connect(self.on_provider_changed)
+        
         # Кнопки
-        button_layout = QHBoxLayout()
-        button_layout.setSpacing(10)
-
-        ok_button = QPushButton("Добавить", self)
-        ok_button.clicked.connect(self.accept)
-
-        cancel_button = QPushButton("Отмена", self)
-        cancel_button.clicked.connect(self.reject)
-
-        button_layout.addWidget(ok_button)
-        button_layout.addWidget(cancel_button)
-
-        layout.addLayout(button_layout)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
+            Qt.Horizontal, self)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+        
+        self.setLayout(layout)
+        
+    def on_provider_changed(self, provider: str):
+        """Обновляет подсказки в зависимости от выбранного провайдера."""
+        if provider == "OpenAI":
+            self.model_name_edit.setPlaceholderText("gpt-3.5-turbo")
+            self.api_endpoint_edit.setPlaceholderText("https://api.openai.com/v1")
+        elif provider == "Anthropic":
+            self.model_name_edit.setPlaceholderText("claude-2")
+            self.api_endpoint_edit.setPlaceholderText("https://api.anthropic.com")
+        elif provider == "Google":
+            self.model_name_edit.setPlaceholderText("gemini-pro")
+            self.api_endpoint_edit.setPlaceholderText("Оставьте пустым для Google AI")
+        elif provider == "OpenRouter":
+            self.model_name_edit.setPlaceholderText("openai/gpt-3.5-turbo")
+            self.api_endpoint_edit.setPlaceholderText("https://openrouter.ai/api/v1")
+            
+    def get_model_info(self) -> Dict[str, str]:
+        """Возвращает информацию о модели."""
+        return {
+            "name": self.name_edit.text(),
+            "provider": self.provider_combo.currentText(),
+            "model_name": self.model_name_edit.text(),
+            "access_token": self.api_key_edit.text(),
+            "api_endpoint": self.api_endpoint_edit.text(),
+            "streaming": self.stream_checkbox.isChecked()
+        }
 
     def apply_theme(self):
         """Применяет текущую тему к окну и всем его элементам."""
@@ -98,21 +100,6 @@ class AddModelDialog(QDialog):
         style = get_style(theme_mode)
         self.setStyleSheet(style)
         self.update()
-
-    def on_provider_changed(self, provider):
-        """Обработчик изменения провайдера."""
-        self.api_endpoint_edit.setText(self.providers[provider])
-
-    def get_model_data(self):
-        """Возвращает данные модели из диалога."""
-        return {
-            "name": self.name_edit.text().strip(),
-            "provider": self.provider_combo.currentText().strip(),
-            "api_endpoint": self.api_endpoint_edit.text().strip(),
-            "model_name": self.model_name_edit.text().strip(),
-            "access_token": self.access_token_edit.text().strip(),
-            "streaming": self.stream_checkbox.isChecked()
-        }
 
     def center_relative_to_parent(self):
         """Центрирует окно относительно родительского окна."""

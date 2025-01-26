@@ -14,7 +14,7 @@ class LLMApi:
         Args:
             model_info: Словарь с информацией о модели:
                 - name: Имя модели
-                - provider: Провайдер (OpenAI, Anthropic, OpenRouter)
+                - provider: Провайдер (OpenAI, Anthropic, Google, OpenRouter)
                 - api_endpoint: URL эндпоинта API
                 - model_name: Название модели у провайдера
                 - access_token: Токен доступа к API
