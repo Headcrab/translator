@@ -445,3 +445,26 @@ class MainWindow(QMainWindow):
             self.show()
             self.activateWindow()
 
+    def wheelEvent(self, event):
+        """Обработка вращения колеса мыши с зажатым Ctrl для изменения размера шрифта"""
+        if event.modifiers() == Qt.ControlModifier:
+            # Получаем текущие настройки шрифта
+            settings = self.settings_manager.get_font_settings()
+            current_size = settings["font_size"]
+            
+            # Определяем направление прокрутки (120 = вверх, -120 = вниз)
+            delta = event.angleDelta().y()
+            if delta > 0:
+                new_size = min(72, current_size + 1)  # Максимальный размер 72
+            else:
+                new_size = max(8, current_size - 1)  # Минимальный размер 8
+            
+            # Сохраняем новые настройки и применяем шрифт
+            self.settings_manager.save_font_settings(
+                settings["font_family"], 
+                new_size
+            )
+            self.apply_font_settings()
+        else:
+            super().wheelEvent(event)
+
