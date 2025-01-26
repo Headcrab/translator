@@ -246,10 +246,11 @@ class MainWindow(QMainWindow):
 
         try:
             llm_api = LLMApi(model_config, self.settings_manager)
+            # Создаем асинхронную лямбда-функцию для callback
             await llm_api.translate(
                 text, 
                 target_lang,
-                streaming_callback=lambda text: self.update_result(text)
+                streaming_callback=lambda t: self.update_result(t)
             )
         finally:
             self.progress_bar.hide()
@@ -393,8 +394,8 @@ class MainWindow(QMainWindow):
         self.text_edit.setFont(font)
         self.translated_text.setFont(font)
 
-    def update_result(self, text):
-        """Обновление текста перевода с обработкой специальных маркеров"""
+    async def update_result(self, text):
+        """Асинхронное обновление текста перевода с обработкой специальных маркеров"""
         if not text or text.startswith("[DONE]"):
             return
         if text.startswith("[META]"):

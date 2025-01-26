@@ -67,7 +67,7 @@
                 "streaming": true
             }
         ],
-        "current": "claude-3-5-sonnet-20241022 - Anthropic",
+        "current": "openai/gpt-4o-mini - OpenRouter",
         "system_prompt": "Ты профессиональный переводчик. Переведи текст точно и грамотно на {language}. Сохрани форматирование и терминологию. Не добавляй комментарии.\"",
         "parameters": {
             "stream": true,

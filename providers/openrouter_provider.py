@@ -4,6 +4,7 @@ from providers.base_provider import BaseProvider
 import aiohttp
 import json
 import asyncio
+import logging
 
 class OpenRouterProvider(BaseProvider):
     """Провайдер для работы с OpenRouter API."""
@@ -56,48 +57,32 @@ class OpenRouterProvider(BaseProvider):
         
         full_response = []
         
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.api_endpoint,
-                    headers=headers,
-                    json=data
-                ) as response:
-                    response.raise_for_status()
-                    
-                    buffer = ""
-                    async for chunk in response.content:
-                        buffer += chunk.decode('utf-8')
-                        while 'data: ' in buffer:
-                            # Находим начало и конец текущего события SSE
-                            start = buffer.find('data: ')
-                            end = buffer.find('\n', start)
-                            if end == -1:  # Если конец строки не найден, ждем больше данных
-                                break
-                                
-                            line = buffer[start:end].strip()
-                            buffer = buffer[end + 1:]  # Убираем обработанную часть из буфера
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                self.api_endpoint,
+                headers=headers,
+                json=data
+            ) as response:
+                response.raise_for_status()
+                
+                async for line in response.content:
+                    if line:
+                        line = line.decode('utf-8').strip()
+                        if not line or line == "data: [DONE]":
+                            continue
                             
-                            if line == 'data: [DONE]':
-                                break
-                                
-                            if line.startswith('data: '):
-                                try:
-                                    chunk_data = json.loads(line[6:])
-                                    if 'choices' in chunk_data:
-                                        delta = chunk_data['choices'][0].get('delta', {}).get('content', '')
-                                        if delta:
-                                            full_response.append(delta)
-                                            if callback is not None:
-                                                if asyncio.iscoroutinefunction(callback):
-                                                    await callback(delta)
-                                                else:
-                                                    callback(delta)
-                                except json.JSONDecodeError:
+                        if line.startswith("data: "):
+                            try:
+                                data = json.loads(line[6:])
+                                if not data["choices"]:
                                     continue
-
-            return ''.join(full_response)
+                                delta = data["choices"][0]["delta"].get("content", "")
+                                if delta:
+                                    full_response.append(delta)
+                                    if callback:
+                                        await callback(delta)
+                            except Exception as e:
+                                logging.error(f"Error processing chunk: {e}")
+                                continue
         
-        except Exception as e:
-            print(f"OpenRouter streaming error: {e}")
-            return "Ошибка перевода" 
+        return "".join(full_response) 
