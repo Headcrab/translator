@@ -19,7 +19,6 @@ from PyQt5.QtCore import (
     pyqtSignal, 
     Qt, 
     QSize,
-    QTimer
 )
 from settings_manager import SettingsManager
 from .styles import get_style
@@ -27,8 +26,8 @@ from .settings_window import SettingsWindow
 from llm_api import LLMApi
 import os
 from qasync import asyncSlot
-from PyQt5.QtGui import QFont
-import asyncio
+from PyQt5.QtGui import QFont, QTextCursor
+from ui.events import UpdateTranslationEvent
 
 
 class MainWindow(QMainWindow):
@@ -250,9 +249,10 @@ class MainWindow(QMainWindow):
             translated = await llm_api.translate(
                 text, 
                 target_lang,
-                streaming_callback=self.update_result
+                streaming_callback=lambda text: self.update_result(text)
             )
-            self.update_result(f"\n\n[Перевод завершен]")
+            # Добавляем финальный перевод на случай если streaming не сработал
+            self.update_result(translated)
         finally:
             self.progress_bar.hide()
 
@@ -268,6 +268,22 @@ class MainWindow(QMainWindow):
             llm_api = LLMApi(model_config, self.settings_manager)
             translated = await llm_api.translate(text, target_lang)
             self.translated_text.setPlainText(translated)
+        finally:
+            self.progress_bar.hide()
+
+    @asyncSlot()
+    async def on_clipboard_updated(self, text):
+        try:
+            self.progress_bar.show()
+            translation = await self.llm_api.translate(
+                text, 
+                self.target_lang,
+                self.handle_streaming_response
+            )
+            self.update_translation(translation)
+        except Exception as e:
+            print(f"Translation error: {e}")
+            self.translation_area.setPlainText("Ошибка перевода")
         finally:
             self.progress_bar.hide()
 
@@ -380,20 +396,29 @@ class MainWindow(QMainWindow):
         self.translated_text.setFont(font)
 
     def update_result(self, text):
-        # Используем QTimer для обновления в основном потоке
-        QTimer.singleShot(0, lambda: self._update_result_impl(text))
-
-    def _update_result_impl(self, text):
-        """Реальная реализация обновления текста в основном потоке."""
+        """Обновление текста перевода с обработкой специальных маркеров"""
+        if text.startswith("[DONE]"):
+            return
+        if text.startswith("[META]"):
+            self.statusBar().showMessage(text[6:], 5000)
+            return
+        
+        # Добавляем текст и автоматически прокручиваем
+        self.translated_text.moveCursor(QTextCursor.End)
         self.translated_text.insertPlainText(text)
-        # Прокрутка к концу
-        cursor = self.translated_text.textCursor()
-        cursor.movePosition(cursor.End)
-        self.translated_text.setTextCursor(cursor)
-        QApplication.processEvents()  # Принудительное обновление интерфейса
+        self.translated_text.ensureCursorVisible()
+        QApplication.processEvents()
 
     def get_selected_model_config(self):
         """Возвращает конфигурацию выбранной модели."""
         model_name = self.model_combo.currentText()
         return self.settings_manager.get_model_info(model_name)
+
+    def event(self, event):
+        if isinstance(event, UpdateTranslationEvent):
+            self.translated_text.moveCursor(QTextCursor.End)
+            self.translated_text.insertPlainText(event.text)
+            self.translated_text.repaint()  # Принудительная перерисовка
+            return True
+        return super().event(event)
 

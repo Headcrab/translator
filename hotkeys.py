@@ -6,8 +6,9 @@ import win32api
 import win32con
 
 
-def register_global_hotkeys(main_window, hotkey):
+def register_global_hotkeys(window, hotkey):
     """Функция для регистрации глобальных горячих клавиш"""
+    print(f"Регистрируем хоткей: {hotkey}")
 
     def wait_for_keys_release():
         """Ждет, пока все клавиши-модификаторы не будут отпущены"""
@@ -56,14 +57,14 @@ def register_global_hotkeys(main_window, hotkey):
             text = pyperclip.paste()
 
             # Показываем окно приложения через сигнал
-            main_window.show_window_requested.emit()
+            window.show_window_requested.emit()
 
             # Проверяем, изменился ли текст
             if text and text != old_text:
                 print(
                     f"Текст из буфера: {text[:100]}..."
                 )  # Показываем первые 100 символов
-                main_window.clipboard_updated.emit(text)
+                window.clipboard_updated.emit(text)
                 print("Сигнал clipboard_updated отправлен")
             else:
                 print("Буфер обмена не изменился или пуст")

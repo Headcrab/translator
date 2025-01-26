@@ -8,9 +8,14 @@ from system_tray import SystemTrayHandler
 from hotkeys import register_global_hotkeys
 from settings_manager import SettingsManager
 from qasync import QEventLoop
+import logging
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-def main():
+async def main_async():
     # Создаём экземпляр QApplication
     app = QApplication(sys.argv)
     loop = QEventLoop(app)
@@ -47,11 +52,39 @@ def main():
     # Запуск основного цикла
     with loop:
         loop.run_forever()
+    return 0
 
 
 if __name__ == "__main__":
     try:
-        main()
+        app = QApplication(sys.argv)
+        loop = QEventLoop(app)
+        asyncio.set_event_loop(loop)
+        
+        with loop:
+            window = MainWindow()
+            window.show()
+            
+            # Инициализация системного трея
+            tray_handler = SystemTrayHandler(app, window)
+            tray_handler.show()
+
+            # Регистрация горячих клавиш
+            settings_manager = SettingsManager()
+            modifiers, key = settings_manager.get_hotkey()
+            hotkey = "+".join(modifiers) + "+" + key if modifiers else key
+            hotkey_thread = threading.Thread(
+                target=register_global_hotkeys, 
+                args=(window, hotkey),
+                daemon=True
+            )
+            hotkey_thread.start()
+
+            loop.run_forever()
+            
     except Exception as e:
-        print("Неожиданная ошибка при запуске приложения:", e)
+        print(f"Critical error: {e}")
         traceback.print_exc()
+    finally:
+        if 'loop' in locals():
+            loop.close()

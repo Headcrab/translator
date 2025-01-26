@@ -1,7 +1,7 @@
 {
     "window": {
-        "x": 464,
-        "y": 102,
+        "x": 303,
+        "y": 87,
         "width": 1370,
         "height": 801
     },
@@ -49,10 +49,31 @@
                 "model_name": "google/gemini-2.0-flash-exp:free",
                 "access_token": "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",
                 "streaming": true
+            },
+            {
+                "name": "openai/gpt-4o-mini - OpenRouter",
+                "provider": "OpenRouter",
+                "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "model_name": "openai/gpt-4o-mini",
+                "access_token": "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",
+                "streaming": true
+            },
+            {
+                "name": "claude-3-5-sonnet-20241022 - Anthropic",
+                "provider": "Anthropic",
+                "api_endpoint": "https://api.anthropic.com",
+                "model_name": "claude-3-5-sonnet-20241022",
+                "access_token": "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",
+                "streaming": true
             }
         ],
-        "current": "google/gemini-2.0-flash-exp:free - OpenRouter",
-        "system_prompt": "Ты профессиональный переводчик. Переведи текст точно и грамотно на {language}. Сохрани форматирование и терминологию. Не добавляй комментарии.\""
+        "current": "gpt-4o-mini - OpenAI",
+        "system_prompt": "Ты профессиональный переводчик. Переведи текст точно и грамотно на {language}. Сохрани форматирование и терминологию. Не добавляй комментарии.\"",
+        "parameters": {
+            "stream": true,
+            "temperature": 0.7,
+            "max_tokens": 1000
+        }
     },
     "theme": {
         "mode": "dark"

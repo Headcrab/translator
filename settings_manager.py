@@ -297,10 +297,10 @@ class SettingsManager:
                     
                 self.save_settings()
 
-    def get_system_prompt(self):
-        return self.settings.get('system_prompt', 
-            "Ты профессиональный переводчик. Переведи текст точно и грамотно на {language}. "
-            "Сохрани форматирование и терминологию. Не добавляй комментарии.")
+    def get_system_prompt(self) -> str:
+        prompt = self.settings.get("system_prompt", "")
+        # Защита от пустого промпта
+        return prompt or "Ты профессиональный переводчик. Переведи текст на {language}."
     
     def set_system_prompt(self, prompt):
         self.settings['system_prompt'] = prompt
