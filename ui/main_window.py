@@ -15,7 +15,12 @@ from PyQt5.QtWidgets import (
     QProgressBar,
     QDialog,
 )
-from PyQt5.QtCore import pyqtSignal, Qt, QSize
+from PyQt5.QtCore import (
+    pyqtSignal, 
+    Qt, 
+    QSize,
+    QTimer
+)
 from settings_manager import SettingsManager
 from .styles import get_style
 from .settings_window import SettingsWindow
@@ -23,6 +28,7 @@ from llm_api import LLMApi
 import os
 from qasync import asyncSlot
 from PyQt5.QtGui import QFont
+import asyncio
 
 
 class MainWindow(QMainWindow):
@@ -36,7 +42,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.settings_manager = SettingsManager()
 
-        self.setWindowTitle("Мое Python-приложение (PyQt)")
+        self.setWindowTitle("LLM Translator")
         self.apply_theme()
 
         # Устанавливаем геометрию из настроек
@@ -166,16 +172,20 @@ class MainWindow(QMainWindow):
         self.progress_bar.hide()
         central_layout.addWidget(self.progress_bar)
 
-        self.translate_button.clicked.connect(self.handle_translate_click)
+        self.translate_button.clicked.connect(self.start_translation)
 
     def update_model_combo(self):
-        """Обновляет список моделей в комбобоксе."""
+        """Обновляет список моделей в выпадающем меню."""
         self.model_combo.clear()
-        available_models, current_model = self.settings_manager.get_models()
-        model_names = [model["name"] for model in available_models]
-        self.model_combo.addItems(model_names)
+        models, _ = self.settings_manager.get_models()
+        for model in models:
+            self.model_combo.addItem(model["name"])
+        
+        # Получаем текущую модель как объект
+        _, current_model = self.settings_manager.get_models()
         if current_model:
-            self.model_combo.setCurrentText(current_model)
+            # Устанавливаем по имени модели
+            self.model_combo.setCurrentText(current_model["name"])
 
     async def _do_translate(self):
         """Выполняет перевод текста."""
@@ -215,32 +225,49 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Ошибка", str(e))
 
     @asyncSlot()
-    async def handle_translate_click(self):
-        text = self.text_edit.toPlainText()
-        if not text:
-            return
+    async def start_translation(self):
+        """Запускает процесс перевода с учетом режима streaming."""
+        try:
+            model_config = self.get_selected_model_config()
+            if model_config.get('streaming', False):
+                await self.handle_streaming_translation()
+            else:
+                await self.handle_regular_translation()
+        except Exception as e:
+            self.show_error_message(str(e))
+
+    async def handle_streaming_translation(self):
+        """Обрабатывает потоковый перевод."""
+        self.progress_bar.show()
+        self.translated_text.clear()
         
+        text = self.text_edit.toPlainText()
+        target_lang = self.language_combo.currentText()
+        model_config = self.get_selected_model_config()
+
+        try:
+            llm_api = LLMApi(model_config, self.settings_manager)
+            translated = await llm_api.translate(
+                text, 
+                target_lang,
+                streaming_callback=self.update_result
+            )
+            self.update_result(f"\n\n[Перевод завершен]")
+        finally:
+            self.progress_bar.hide()
+
+    async def handle_regular_translation(self):
+        """Обрабатывает обычный перевод."""
         self.progress_bar.show()
         
+        text = self.text_edit.toPlainText()
+        target_lang = self.language_combo.currentText()
+        model_config = self.get_selected_model_config()
+
         try:
-            model_info = self.settings_manager.get_model_info()
-            if not model_info:
-                self.show_error_message("Модель перевода не выбрана")
-                return
-            
-            llm_api = LLMApi(model_info, self.settings_manager)
-            target_lang = self.language_combo.currentText()
-            if not model_info.get("access_token"):
-                self.show_error_message("Токен доступа не настроен")
-                return
-            
+            llm_api = LLMApi(model_config, self.settings_manager)
             translated = await llm_api.translate(text, target_lang)
-            if not translated:
-                raise ValueError("Пустой ответ от модели")
-            
             self.translated_text.setPlainText(translated)
-        except Exception as e:
-            self.show_error_message(f"Ошибка перевода: {str(e)}")
         finally:
             self.progress_bar.hide()
 
@@ -351,3 +378,22 @@ class MainWindow(QMainWindow):
 
         self.text_edit.setFont(font)
         self.translated_text.setFont(font)
+
+    def update_result(self, text):
+        # Используем QTimer для обновления в основном потоке
+        QTimer.singleShot(0, lambda: self._update_result_impl(text))
+
+    def _update_result_impl(self, text):
+        """Реальная реализация обновления текста в основном потоке."""
+        self.translated_text.insertPlainText(text)
+        # Прокрутка к концу
+        cursor = self.translated_text.textCursor()
+        cursor.movePosition(cursor.End)
+        self.translated_text.setTextCursor(cursor)
+        QApplication.processEvents()  # Принудительное обновление интерфейса
+
+    def get_selected_model_config(self):
+        """Возвращает конфигурацию выбранной модели."""
+        model_name = self.model_combo.currentText()
+        return self.settings_manager.get_model_info(model_name)
+

@@ -1,9 +1,9 @@
 {
     "window": {
-        "x": 979,
-        "y": 458,
-        "width": 778,
-        "height": 518
+        "x": 464,
+        "y": 102,
+        "width": 1370,
+        "height": 801
     },
     "hotkey": {
         "modifiers": [
@@ -22,7 +22,7 @@
             "Русский матерный",
             "Казахский"
         ],
-        "current": "Русский"
+        "current": "Английский"
     },
     "models": {
         "available": [
@@ -31,21 +31,24 @@
                 "provider": "OpenAI",
                 "api_endpoint": "https://api.openai.com/v1",
                 "model_name": "gpt-4o-mini",
-                "access_token": "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"
+                "access_token": "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",
+                "streaming": true
             },
             {
                 "name": "gpt-4o - OpenAI",
                 "provider": "OpenAI",
                 "api_endpoint": "https://api.openai.com/v1",
                 "model_name": "gpt-4o",
-                "access_token": "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"
+                "access_token": "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",
+                "streaming": false
             },
             {
                 "name": "google/gemini-2.0-flash-exp:free - OpenRouter",
                 "provider": "OpenRouter",
                 "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
                 "model_name": "google/gemini-2.0-flash-exp:free",
-                "access_token": "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"
+                "access_token": "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",
+                "streaming": true
             }
         ],
         "current": "google/gemini-2.0-flash-exp:free - OpenRouter",
@@ -55,8 +58,8 @@
         "mode": "dark"
     },
     "settings_window_geometry": [
-        1111,
-        398,
+        949,
+        225,
         400,
         617
     ],

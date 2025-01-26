@@ -8,6 +8,8 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QComboBox,
     QPushButton,
+    QCheckBox,
+    QFormLayout,
 )
 from settings_manager import SettingsManager
 from .styles import get_style
@@ -50,31 +52,29 @@ class AddModelDialog(QDialog):
         self.model_name_edit = QLineEdit(self)
         self.access_token_edit = QLineEdit(self)
 
-        # Добавляем поля с метками
-        form_layout = QVBoxLayout()
-        form_layout.setSpacing(8)
+        # Создаем form_layout с QFormLayout
+        form_layout = QFormLayout()
+        form_layout.setVerticalSpacing(8)
 
+        # Добавляем элементы через addRow
         labels = [
-            "Название:",
-            "Провайдер:",
-            "API endpoint:",
-            "Название модели:",
-            "Токен доступа:",
+            "Название:", "Провайдер:", "API endpoint:", 
+            "Название модели:", "Токен доступа:"
         ]
         widgets = [
-            self.name_edit,
-            self.provider_combo,
-            self.api_endpoint_edit,
-            self.model_name_edit,
-            self.access_token_edit,
+            self.name_edit, self.provider_combo, 
+            self.api_endpoint_edit, self.model_name_edit, 
+            self.access_token_edit
         ]
-
+        
         for label_text, widget in zip(labels, widgets):
-            label = QLabel(label_text)
-            self.apply_theme()
-            form_layout.addWidget(label)
-            form_layout.addWidget(widget)
-
+            form_layout.addRow(QLabel(label_text), widget)
+        
+        # Добавляем чекбокс потокового вывода
+        self.stream_checkbox = QCheckBox()
+        form_layout.addRow("Потоковый вывод:", self.stream_checkbox)
+        
+        # Добавляем form_layout в основной layout
         layout.addLayout(form_layout)
 
         # Кнопки
@@ -111,6 +111,7 @@ class AddModelDialog(QDialog):
             "api_endpoint": self.api_endpoint_edit.text(),
             "model_name": self.model_name_edit.text(),
             "access_token": self.access_token_edit.text(),
+            "streaming": self.stream_checkbox.isChecked(),
         }
 
     def center_relative_to_parent(self):

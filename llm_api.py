@@ -30,49 +30,49 @@ class LLMApi:
         self.model_name = model_info["model_name"]
         self.access_token = model_info.get("access_token")
         
-    async def translate(self, text: str, target_lang: str) -> str:
-        """
-        Переводит текст на указанный язык используя выбранную модель.
-        
-        Args:
-            text: Исходный текст для перевода
-            target_lang: Язык, на который нужно перевести
-            
-        Returns:
-            str: Переведенный текст
-            
-        Raises:
-            Exception: При ошибке перевода
-        """
-        if not text:
-            return ""
-            
+    async def translate(self, text: str, target_lang: str, streaming_callback=None) -> str:
+        """Выполняет перевод с поддержкой потокового режима."""
         system_prompt = self.settings_manager.get_system_prompt()
         
         messages = [
-            {
-                "role": "system",
-                "content": system_prompt.format(language=target_lang)
-            },
-            {
-                "role": "user", 
-                "content": text
-            }
+            {"role": "system", "content": system_prompt.format(language=target_lang)},
+            {"role": "user", "content": text}
         ]
-        
+
+        if self.provider == "OpenAI" and self.model_info.get('streaming', False):
+            return await self._streaming_translate(messages, streaming_callback)
+        else:
+            return await self._regular_translate(messages)
+
+    async def _streaming_translate(self, messages, callback):
+        """Потоковый перевод для OpenAI."""
         try:
-            if self.provider == "OpenAI":
-                return await self._translate_openai(messages)
-            elif self.provider == "Anthropic":
-                return await self._translate_anthropic(messages)
-            elif self.provider == "OpenRouter":
-                return await self._translate_openrouter(messages)
-            else:
-                raise ValueError(f"Неподдерживаемый провайдер: {self.provider}")
-        except Exception as e:
-            raise Exception(f"Ошибка при переводе: {str(e)}")
-            
-    async def _translate_openai(self, messages: list) -> str:
+            from openai import AsyncOpenAI
+        except ImportError:
+            raise ImportError(
+                "Для использования потокового режима требуется библиотека openai. "
+                "Установите ее: pip install openai"
+            )
+        
+        client = AsyncOpenAI(api_key=self.access_token)
+        
+        full_translation = []
+        response = await client.chat.completions.create(
+            model=self.model_name,
+            messages=messages,
+            stream=True
+        )
+        
+        async for chunk in response:
+            delta = chunk.choices[0].delta.content
+            if delta:
+                full_translation.append(delta)
+                if callback:
+                    callback(delta)
+        
+        return ''.join(full_translation)
+
+    async def _regular_translate(self, messages: list) -> str:
         """Перевод через OpenAI API."""
         headers = {
             "Content-Type": "application/json",
@@ -148,6 +148,34 @@ class LLMApi:
                     
                 result = await response.json()
                 return result["choices"][0]["message"]["content"].strip()
+
+    async def translate_text_async(self, text, target_lang, model_config, callback=None):
+        provider = model_config.get('provider')
+        
+        if provider == "openai":
+            from openai import AsyncOpenAI
+            client = AsyncOpenAI(api_key=model_config.get('access_token'))
+            
+            response = await client.chat.completions.create(
+                model=model_config['model_name'],
+                messages=[{"role": "user", "content": text}],
+                stream=model_config.get('streaming', False)
+            )
+            
+            if model_config.get('streaming'):
+                full_translation = []
+                async for chunk in response:
+                    delta = chunk.choices[0].delta.content
+                    if delta:
+                        full_translation.append(delta)
+                        if callback:
+                            await asyncio.sleep(0.01)
+                            callback(delta)
+                return ''.join(full_translation)
+            else:
+                return response.choices[0].message.content
+        
+        # Аналогичные изменения для других провайдеров...
 
 def translate(text):
     # Пример реализации перевода с использованием внешнего API

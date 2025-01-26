@@ -648,6 +648,7 @@ class SettingsWindow(QDialog):
                 dialog.api_endpoint_edit.setText(current_model['api_endpoint'])
                 dialog.model_name_edit.setText(current_model['model_name'])
                 dialog.access_token_edit.setText(current_model.get('access_token', ''))
+                dialog.stream_checkbox.setChecked(current_model.get('streaming', False))
                 
                 if dialog.exec_() == QDialog.Accepted:
                     model_data = dialog.get_model_data()
