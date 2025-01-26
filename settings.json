@@ -21,9 +21,11 @@
             "Английский",
             "Русский матерный",
             "Казахский",
-            "Golang"
+            "Golang",
+            "Возвышенный, архаичный стиль русского",
+            "Только смайлики вместо слов"
         ],
-        "current": "Русский"
+        "current": "Только смайлики вместо слов"
     },
     "models": {
         "available": [
@@ -34,14 +36,6 @@
                 "model_name": "gpt-4o-mini",
                 "access_token": "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",
                 "streaming": true
-            },
-            {
-                "name": "claude-3-5-sonnet-20241022 - Anthropic",
-                "provider": "Anthropic",
-                "api_endpoint": "https://api.anthropic.com",
-                "model_name": "claude-3-5-sonnet-20241022",
-                "access_token": "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",
-                "streaming": false
             },
             {
                 "name": "gpt-4o - OpenAI",
@@ -68,16 +62,24 @@
                 "streaming": true
             },
             {
+                "name": "claude-3-5-sonnet-20241022 - Anthropic",
+                "provider": "Anthropic",
+                "api_endpoint": "https://api.anthropic.com",
+                "model_name": "claude-3-5-sonnet-20241022",
+                "access_token": "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",
+                "streaming": true
+            },
+            {
                 "name": "gemini-2.0-flash-exp - Google",
                 "provider": "Google",
                 "api_endpoint": "",
                 "model_name": "gemini-2.0-flash-exp",
                 "access_token": "AIzaSyB3JlIZsL55l-oB-TIWTRjPnjUM0GXH164",
-                "streaming": false
+                "streaming": true
             }
         ],
-        "current": "gemini-2.0-flash-exp - Google",
-        "system_prompt": "Ты профессиональный переводчик. Переведи текст точно и грамотно на {language}. Сохрани форматирование и терминологию. Не добавляй комментарии.\"",
+        "current": "gpt-4o-mini - OpenAI",
+        "system_prompt": "You are a professional translator. Translate the text accurately and competently into {language}. Preserve formatting and terminology. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!",
         "parameters": {
             "stream": true,
             "temperature": 0.7,
@@ -88,13 +90,13 @@
         "mode": "dark"
     },
     "settings_window_geometry": [
-        788,
-        210,
+        741,
+        218,
         400,
-        617
+        734
     ],
     "appearance": {
-        "font_family": "JetBrains Mono",
+        "font_family": "Segoe UI",
         "font_size": 12
     }
 }

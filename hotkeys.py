@@ -8,7 +8,7 @@ import win32con
 
 def register_global_hotkeys(window, hotkey):
     """Функция для регистрации глобальных горячих клавиш"""
-    print(f"Регистрируем хоткей: {hotkey}")
+    # print(f"Регистрируем хоткей: {hotkey}")
 
     def wait_for_keys_release():
         """Ждет, пока все клавиши-модификаторы не будут отпущены"""

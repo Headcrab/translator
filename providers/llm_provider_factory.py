@@ -32,35 +32,3 @@ class LLMProviderFactory:
             return GoogleProvider(model_info)
         else:
             raise ValueError(f"Неизвестный провайдер: {provider_name}")
-
-    @staticmethod
-    def get_provider_by_name(provider_name: str) -> BaseProvider:
-        """Создает экземпляр провайдера на основе имени провайдера."""
-        if not provider_name:
-            raise ValueError("Не указан провайдер")
-            
-        provider_map = {
-            "OpenAI": OpenAIProvider,
-            "Anthropic": AnthropicProvider,
-            "OpenRouter": OpenRouterProvider,
-            "Google": GoogleProvider
-        }
-        
-        provider_class = provider_map.get(provider_name)
-        if not provider_class:
-            raise ValueError(f"Неподдерживаемый провайдер: {provider_name}")
-            
-        # Добавляем проверку обязательных полей для OpenRouter
-        if provider_name == "OpenRouter":
-            required_fields = [
-                "model_name", 
-                "access_token"
-            ]
-            for field in required_fields:
-                if field not in model_info:
-                    raise ValueError(f"Отсутствует поле {field} для OpenRouter")
-            
-            if not model_info.get("stream_options"):
-                model_info["stream_options"] = {"include_usage": True}
-        
-        return provider_class(model_info) 

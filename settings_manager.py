@@ -319,14 +319,27 @@ class SettingsManager:
         self.save_settings()
 
     def get_font_settings(self):
+        """Получает настройки шрифта."""
+        appearance = self.settings.get("appearance", {})
         return {
-            "font_family": self.settings.get("appearance", {}).get("font_family", "Cascadia Code"),
-            "font_size": self.settings.get("appearance", {}).get("font_size", 12)
+            "font_family": appearance.get("font_family", "Arial"),
+            "font_size": int(appearance.get("font_size", 12))
         }
 
     def save_font_settings(self, font_family, font_size):
+        """Сохраняет настройки шрифта."""
+        if not isinstance(font_size, int):
+            try:
+                font_size = int(font_size)
+            except (ValueError, TypeError):
+                font_size = 12
+            
         if "appearance" not in self.settings:
             self.settings["appearance"] = {}
-        self.settings["appearance"]["font_family"] = font_family
-        self.settings["appearance"]["font_size"] = font_size
+        
+        self.settings["appearance"].update({
+            "font_family": font_family,
+            "font_size": font_size
+        })
+        
         self.save_settings()

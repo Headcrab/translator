@@ -16,13 +16,11 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QToolButton,
     QTabWidget,
-    QMainWindow,
     QFontComboBox,
     QFormLayout,
 )
 from PyQt5.QtGui import QFont
 from settings_manager import SettingsManager
-from hotkeys import register_global_hotkeys, unregister_global_hotkeys
 from .styles import get_style
 from .add_model_dialog import AddModelDialog
 
@@ -370,17 +368,23 @@ class SettingsWindow(QDialog):
 
         main_layout.addLayout(buttons_layout)
 
-        # Переносим инициализацию элементов интерфейса ДО загрузки настроек
+        # Создаем все элементы интерфейса
         self._init_ui_components()
+        
+        # Загружаем настройки после создания всех компонентов
         self.load_settings()
         self.apply_theme()
-        self.init_font_settings()
 
     def _init_ui_components(self):
-        # Создаем все элементы интерфейса здесь
-        self.font_combo = QFontComboBox()
-        self.size_combo = QComboBox()
-        ...
+        """Инициализация компонентов интерфейса."""
+        # Удалите или закомментируйте следующие строки:
+        # self.font_combo = QFontComboBox()
+        # self.size_combo = QComboBox()
+        
+        # Инициализация комбобоксов шрифта
+        self.size_combo.clear()
+        sizes = [str(s) for s in range(8, 25)]
+        self.size_combo.addItems(sizes)
 
     def apply_theme(self):
         """Применяет текущую тему к окну и всем его элементам."""
@@ -442,26 +446,40 @@ class SettingsWindow(QDialog):
 
         # Загрузка настроек шрифта
         font_settings = self.settings_manager.get_font_settings()
-        current_font = QFont()
-        current_font.setFamily(font_settings["font_family"])
-        current_font.setPointSize(int(font_settings["font_size"]))
         
-        # Устанавливаем шрифт и размер в комбобоксы
-        self.font_combo.setCurrentFont(current_font)
-        self.size_combo.setCurrentText(str(current_font.pointSize()))
+        # Устанавливаем шрифт
+        font = QFont(font_settings["font_family"])
+        self.font_combo.setCurrentFont(font)
+        
+        # Устанавливаем размер
+        size_str = str(font_settings["font_size"])
+        index = self.size_combo.findText(size_str)
+        if index >= 0:
+            self.size_combo.setCurrentIndex(index)
+        else:
+            # Если размер не найден в списке, добавляем его
+            self.size_combo.addItem(size_str)
+            self.size_combo.setCurrentText(size_str)
 
     def closeEvent(self, event):
         """Переопределяем поведение при закрытии окна настроек."""
+        # Сохраняем все настройки перед закрытием
+        self.save_settings()
+        
         # Сохранение геометрии
         geom = self.geometry()
         self.settings_manager.set_settings_window_geometry(
             geom.x(), geom.y(), geom.width(), geom.height()
         )
-        event.ignore()
-        self.hide()
+        super().closeEvent(event)
 
     def save_settings(self):
         """Сохраняет настройки."""
+        # Сохранение настроек шрифта
+        font_family = self.font_combo.currentFont().family()
+        font_size = int(self.size_combo.currentText())
+        self.settings_manager.save_font_settings(font_family, font_size)
+        
         # Сохранение настроек хоткеев
         modifiers = []
         if self.ctrl_checkbox.isChecked():
@@ -493,49 +511,13 @@ class SettingsWindow(QDialog):
         # Применяем новую тему
         self.apply_theme()
 
-        # Сохранение списка языков
-        languages = []
-        for i in range(self.languages_list.count()):
-            languages.append(self.languages_list.item(i).text().strip())
-        self.settings_manager.set_available_languages(languages)
-
-        # Обновляем список языков через родительское окно
+        # Применяем новые настройки шрифта к родительскому окну
         parent = self.parent()
-        if isinstance(parent, QMainWindow):  # Проверяем, что parent является главным окном
-            parent.language_combo.clear()
-            parent.language_combo.addItems(languages)
-        
-        # Обновление хоткеев через родительское окно
-        if parent:
-            unregister_global_hotkeys()
-            hotkey_str = "+".join(modifiers) + "+" + key if modifiers else key
-            register_global_hotkeys(parent, hotkey_str)
-
-        # Обновляем сохранение системного промпта
-        models_settings = self.settings_manager.settings.get("models", {})
-        models_settings["system_prompt"] = self.system_prompt_edit.toPlainText()
-        self.settings_manager.settings["models"] = models_settings
-
-        # Сохранение настроек шрифта
-        font_family = self.font_combo.currentText()
-        try:
-            font_size = int(self.size_combo.currentText())
-        except ValueError:
-            font_size = 12
-        
-        # Добавляем проверку перед сохранением
-        if not font_family or font_size <= 0:
-            QMessageBox.warning(self, "Ошибка", "Некорректные настройки шрифта")
-            return
-        
-        self.settings_manager.save_font_settings(font_family, font_size)
-        
-        # Применяем новый шрифт ко всему приложению
-        if self.parent():
-            self.parent().apply_font(font_family, font_size)
+        if hasattr(parent, 'apply_font_settings'):
+            parent.apply_font_settings()
 
         self.hide()
-
+        
         # Обновляем список моделей в главном окне через родительское окно
         if self.parent():
             self.parent().update_model_combo()
@@ -677,17 +659,6 @@ class SettingsWindow(QDialog):
             
             # Перемещаем окно
             self.move(x, y)
-
-    def init_font_settings(self):
-        # Заменяем создание нового экземпляра SettingsManager на использование существующего
-        font_settings = self.settings_manager.get_font_settings()
-        
-        # Устанавливаем текущий шрифт (исправляем получение имени шрифта)
-        current_font = QFont(font_settings["font_family"], int(font_settings["font_size"]))
-
-        # Устанавливаем шрифт и размер в комбобоксы
-        self.font_combo.setCurrentFont(current_font)
-        self.size_combo.setCurrentText(str(current_font.pointSize()))
 
     def update_models_list(self):
         """Обновляет список моделей в интерфейсе."""

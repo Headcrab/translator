@@ -3,11 +3,8 @@
 from PyQt5.QtWidgets import (
     QDialog,
     QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
     QLineEdit,
     QComboBox,
-    QPushButton,
     QCheckBox,
     QFormLayout,
     QDialogButtonBox,
