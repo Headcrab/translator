@@ -548,13 +548,14 @@ class SettingsWindow(QDialog):
             model_data = dialog.get_model_data()
 
             # Проверяем, что все поля заполнены
-            if all(model_data.values()):
+            if all(value for key, value in model_data.items() if key != 'streaming'):  # Исключаем streaming из проверки
                 self.settings_manager.add_model(
                     model_data["name"],
                     model_data["provider"],
                     model_data["api_endpoint"],
                     model_data["model_name"],
                     model_data["access_token"],
+                    model_data["streaming"]  # Передаем значение streaming
                 )
 
                 # Обновляем список моделей
@@ -652,7 +653,7 @@ class SettingsWindow(QDialog):
                 
                 if dialog.exec_() == QDialog.Accepted:
                     model_data = dialog.get_model_data()
-                    if all(model_data.values()):
+                    if all(value for key, value in model_data.items() if key != 'streaming'):
                         # Удаляем старую модель
                         self.settings_manager.remove_model(current_model_name)
                         # Добавляем новую модель
@@ -662,6 +663,7 @@ class SettingsWindow(QDialog):
                             model_data["api_endpoint"],
                             model_data["model_name"],
                             model_data["access_token"],
+                            model_data["streaming"]  # Передаем значение streaming
                         )
                         self.load_settings()
                         # Обновляем список моделей через родительское окно

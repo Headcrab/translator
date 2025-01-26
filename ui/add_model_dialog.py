@@ -104,14 +104,14 @@ class AddModelDialog(QDialog):
         self.api_endpoint_edit.setText(self.providers[provider])
 
     def get_model_data(self):
-        """Возвращает данные модели из полей ввода."""
+        """Возвращает данные модели из диалога."""
         return {
-            "name": self.name_edit.text(),
-            "provider": self.provider_combo.currentText(),
-            "api_endpoint": self.api_endpoint_edit.text(),
-            "model_name": self.model_name_edit.text(),
-            "access_token": self.access_token_edit.text(),
-            "streaming": self.stream_checkbox.isChecked(),
+            "name": self.name_edit.text().strip(),
+            "provider": self.provider_combo.currentText().strip(),
+            "api_endpoint": self.api_endpoint_edit.text().strip(),
+            "model_name": self.model_name_edit.text().strip(),
+            "access_token": self.access_token_edit.text().strip(),
+            "streaming": self.stream_checkbox.isChecked()
         }
 
     def center_relative_to_parent(self):

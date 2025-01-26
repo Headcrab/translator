@@ -29,14 +29,9 @@ class LLMProviderFactory:
             
         # Добавляем проверку обязательных полей для OpenRouter
         if provider_name == "OpenRouter":
-            if not model_info.get("streaming", False):
-                raise ValueError("OpenRouter требует включенный streaming режим")
-            
             required_fields = [
-                "api_endpoint", 
                 "model_name", 
-                "access_token",
-                "streaming"
+                "access_token"
             ]
             for field in required_fields:
                 if field not in model_info:

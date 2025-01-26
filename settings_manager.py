@@ -144,16 +144,7 @@ class SettingsManager:
         return models, current_model  # Возвращаем список моделей и объект текущей
 
     def add_model(self, name, provider, api_endpoint, model_name, access_token, streaming=False):
-        """Добавляет новую модель в список доступных.
-
-        Args:
-            name: Имя модели
-            provider: Провайдер модели
-            api_endpoint: Конечная точка API
-            model_name: Название модели у провайдера
-            access_token: Токен доступа к API (опционально)
-            streaming: Флаг потокового вывода
-        """
+        """Добавляет новую модель в список доступных."""
         if "models" not in self.settings:
             self.settings["models"] = {"available": [], "current": None}
 
@@ -163,13 +154,25 @@ class SettingsManager:
             "api_endpoint": api_endpoint,
             "model_name": model_name,
             "access_token": access_token,
-            "streaming": streaming
+            "streaming": streaming  # Убедимся, что streaming сохраняется
         }
 
-        self.settings["models"]["available"].append(model)
+        # Проверяем, существует ли модель с таким именем
+        existing_model_index = next(
+            (i for i, m in enumerate(self.settings["models"]["available"]) if m["name"] == name),
+            None
+        )
+
+        if existing_model_index is not None:
+            # Обновляем существующую модель
+            self.settings["models"]["available"][existing_model_index] = model
+        else:
+            # Добавляем новую модель
+            self.settings["models"]["available"].append(model)
+
         # Если текущая модель не выбрана, устанавливаем новую модель как текущую
         if not self.settings["models"]["current"]:
-            self.settings["models"]["current"] = name  # Сохраняем имя модели вместо объекта
+            self.settings["models"]["current"] = name
 
         self.save_settings()
 
