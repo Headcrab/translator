@@ -246,13 +246,11 @@ class MainWindow(QMainWindow):
 
         try:
             llm_api = LLMApi(model_config, self.settings_manager)
-            translated = await llm_api.translate(
+            await llm_api.translate(
                 text, 
                 target_lang,
                 streaming_callback=lambda text: self.update_result(text)
             )
-            # Добавляем финальный перевод на случай если streaming не сработал
-            self.update_result(translated)
         finally:
             self.progress_bar.hide()
 
@@ -397,7 +395,7 @@ class MainWindow(QMainWindow):
 
     def update_result(self, text):
         """Обновление текста перевода с обработкой специальных маркеров"""
-        if text.startswith("[DONE]"):
+        if not text or text.startswith("[DONE]"):
             return
         if text.startswith("[META]"):
             self.statusBar().showMessage(text[6:], 5000)
