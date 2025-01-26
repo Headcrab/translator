@@ -14,6 +14,8 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QDialog,
+    QSystemTrayIcon,
+    QMenu,
 )
 from PyQt5.QtCore import (
     pyqtSignal, 
@@ -26,8 +28,10 @@ from .settings_window import SettingsWindow
 from llm_api import LLMApi
 import os
 from qasync import asyncSlot
-from PyQt5.QtGui import QFont, QTextCursor
+from PyQt5.QtGui import QFont, QTextCursor, QIcon
 from ui.events import UpdateTranslationEvent
+from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtGui import QKeySequence
 
 
 class MainWindow(QMainWindow):
@@ -64,6 +68,10 @@ class MainWindow(QMainWindow):
             self.show()
 
         self.apply_font_settings()
+
+        self.setup_shortcuts()
+
+        self.setup_tray()
 
     def _setup_ui(self):
         """Настройка пользовательского интерфейса."""
@@ -305,20 +313,9 @@ class MainWindow(QMainWindow):
         super().changeEvent(event)
 
     def closeEvent(self, event):
-        """Обработка закрытия окна"""
-        # Сохраняем текущую геометрию окна
-        geometry = self.geometry()
-        self.settings_manager.set_window_geometry(
-            geometry.x(), geometry.y(), geometry.width(), geometry.height()
-        )
-
-        # Проверяем настройку сворачивания в трей
-        _, minimize_to_tray = self.settings_manager.get_behavior()
-        if minimize_to_tray:
-            event.ignore()
-            self.hide()
-        else:
-            event.accept()
+        """Переопределяем закрытие окна для скрытия в трей"""
+        event.ignore()
+        self.hide()
 
     def open_settings(self):
         """Открывает окно настроек."""
@@ -420,4 +417,31 @@ class MainWindow(QMainWindow):
             self.translated_text.repaint()  # Принудительная перерисовка
             return True
         return super().event(event)
+
+    def setup_shortcuts(self):
+        """Настройка горячих клавиш"""
+        hide_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
+        hide_shortcut.activated.connect(self.hide)
+
+    def setup_tray(self):
+        """Настройка иконки в системном трее"""
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(QIcon("path/to/icon.png"))  # Укажите путь к иконке
+        
+        tray_menu = QMenu()
+        show_action = tray_menu.addAction("Показать")
+        show_action.triggered.connect(self.show)
+        quit_action = tray_menu.addAction("Выход")
+        quit_action.triggered.connect(QApplication.quit)
+        
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.show()
+        
+        # Показ окна по двойному клику по иконке
+        self.tray_icon.activated.connect(self.on_tray_icon_activated)
+        
+    def on_tray_icon_activated(self, reason):
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self.show()
+            self.activateWindow()
 

@@ -20,9 +20,10 @@
             "Русский",
             "Английский",
             "Русский матерный",
-            "Казахский"
+            "Казахский",
+            "Golang"
         ],
-        "current": "Английский"
+        "current": "Golang"
     },
     "models": {
         "available": [
@@ -67,7 +68,7 @@
                 "streaming": true
             }
         ],
-        "current": "gpt-4o-mini - OpenAI",
+        "current": "google/gemini-2.0-flash-exp:free - OpenRouter",
         "system_prompt": "Ты профессиональный переводчик. Переведи текст точно и грамотно на {language}. Сохрани форматирование и терминологию. Не добавляй комментарии.\"",
         "parameters": {
             "stream": true,
