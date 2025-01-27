@@ -32,6 +32,7 @@ from PyQt5.QtGui import QFont, QTextCursor, QIcon
 from ui.events import UpdateTranslationEvent
 from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtGui import QKeySequence
+import asyncio
 
 
 class MainWindow(QMainWindow):
@@ -55,6 +56,8 @@ class MainWindow(QMainWindow):
         # Подключение сигналов к слотам
         self.clipboard_updated.connect(self.update_clipboard)
         self.show_window_requested.connect(self.show_window)
+
+        self.current_translation_task = None  # Добавлено для хранения текущей задачи перевода
 
         self._setup_ui()
 
@@ -172,12 +175,28 @@ class MainWindow(QMainWindow):
         central_layout.addLayout(texts_layout)
         self.setCentralWidget(central_widget)
 
+        # Создаем горизонтальный макет для прогресс-бара и кнопки отмены
+        status_layout = QHBoxLayout()
+
         # Добавляем прогресс-бар
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setRange(0, 0)  # Бесконечная анимация
         self.progress_bar.setTextVisible(False)  # Скрыть процентный текст
         self.progress_bar.hide()
-        central_layout.addWidget(self.progress_bar)
+        status_layout.addWidget(self.progress_bar)
+
+        # Создаем кнопку отмены перевода
+        self.cancel_button = QToolButton(self)
+        self.cancel_button.setIcon(QIcon("path/to/cancel_icon.png"))  # Укажите путь к иконке отмены
+        self.cancel_button.setIconSize(QSize(20, 20))
+        self.cancel_button.setFixedSize(16, 16)
+        self.cancel_button.setToolTip("Отменить перевод")
+        self.cancel_button.clicked.connect(self.cancel_translation)
+        self.cancel_button.hide()  # Скрыта по умолчанию
+        status_layout.addWidget(self.cancel_button)
+
+        # Добавляем горизонтальный макет с прогресс-баром и кнопкой отмены в центральный макет
+        central_layout.addLayout(status_layout)
 
         self.translate_button.clicked.connect(self.start_translation)
 
@@ -235,11 +254,8 @@ class MainWindow(QMainWindow):
     async def start_translation(self):
         """Запускает процесс перевода с учетом режима streaming."""
         try:
-            model_config = self.get_selected_model_config()
-            if model_config.get('streaming', False):
-                await self.handle_streaming_translation()
-            else:
-                await self.handle_regular_translation()
+            self.cancel_button.show()  # Показываем кнопку отмены
+            self.current_translation_task = asyncio.create_task(self._start_translation_async())
         except Exception as e:
             self.show_error_message(str(e))
 
@@ -467,4 +483,24 @@ class MainWindow(QMainWindow):
             self.apply_font_settings()
         else:
             super().wheelEvent(event)
+
+    async def _start_translation_async(self):
+        """Асинхронная часть начала перевода."""
+        try:
+            model_config = self.get_selected_model_config()
+            if model_config.get('streaming', False):
+                await self.handle_streaming_translation()
+            else:
+                await self.handle_regular_translation()
+        except asyncio.CancelledError:
+            self.translated_text.append("\nПеревод отменен.")
+        except Exception as e:
+            self.show_error_message(str(e))
+        finally:
+            self.cancel_button.hide()  # Скрываем кнопку отмены после завершения
+
+    def cancel_translation(self):
+        """Отменяет текущий процесс перевода."""
+        if self.current_translation_task and not self.current_translation_task.done():
+            self.current_translation_task.cancel()
 

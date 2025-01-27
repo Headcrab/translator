@@ -1,7 +1,7 @@
 {
     "window": {
-        "x": 324,
-        "y": 139,
+        "x": 40,
+        "y": 152,
         "width": 1370,
         "height": 801
     },
@@ -25,7 +25,7 @@
             "Возвышенный, архаичный стиль русского",
             "Только смайлики вместо слов"
         ],
-        "current": "Русский"
+        "current": "Возвышенный, архаичный стиль русского"
     },
     "models": {
         "available": [
@@ -86,7 +86,7 @@
                 "streaming": true
             }
         ],
-        "current": "deepseek/deepseek-r1 - OpenRouter",
+        "current": "gemini-2.0-flash-exp - Google",
         "system_prompt": "You are a professional translator. Translate the text accurately and competently into {language}. Preserve formatting and terminology. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!",
         "parameters": {
             "stream": true,
@@ -105,6 +105,6 @@
     ],
     "appearance": {
         "font_family": "Segoe UI",
-        "font_size": 22
+        "font_size": 13
     }
 }
