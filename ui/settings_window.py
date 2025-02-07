@@ -18,8 +18,10 @@ from PyQt5.QtWidgets import (
     QTabWidget,
     QFontComboBox,
     QFormLayout,
+    QListWidgetItem,
 )
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QKeyEvent
+from PyQt5.QtCore import Qt
 from settings_manager import SettingsManager
 from .styles import get_style
 from .add_model_dialog import AddModelDialog
@@ -375,6 +377,10 @@ class SettingsWindow(QDialog):
         self.load_settings()
         self.apply_theme()
 
+        # Настраиваем обработку клавиш для списков
+        self.languages_list.keyPressEvent = lambda event: self.handle_list_key_event(event, self.languages_list)
+        self.models_list.keyPressEvent = lambda event: self.handle_list_key_event(event, self.models_list)
+
     def _init_ui_components(self):
         """Инициализация компонентов интерфейса."""
         # Удалите или закомментируйте следующие строки:
@@ -615,6 +621,7 @@ class SettingsWindow(QDialog):
         selected = self.models_list.currentItem()
         if selected:
             current_model_name = selected.text()
+            current_position = self.models_list.currentRow()  # Сохраняем текущую позицию
             available_models, _ = self.settings_manager.get_models()
             current_model = next((model for model in available_models if model['name'] == current_model_name), None)
             
@@ -634,19 +641,31 @@ class SettingsWindow(QDialog):
                 if dialog.exec_() == QDialog.Accepted:
                     model_data = dialog.get_model_info()
                     if model_data:
-                        # Удаляем старую модель
-                        self.settings_manager.remove_model(current_model_name)
-                        # Добавляем новую модель, передавая пустой токен
-                        self.settings_manager.add_model(
-                            name=model_data["name"],
-                            provider=model_data["provider"],
-                            api_endpoint=model_data["api_endpoint"],
-                            model_name=model_data["model_name"],
-                            access_token="",
-                            streaming=model_data["streaming"]
-                        )
+                        # Получаем текущий список моделей
+                        available_models, _ = self.settings_manager.get_models()
+                        # Удаляем старую модель из списка
+                        available_models = [m for m in available_models if m['name'] != current_model_name]
+                        # Вставляем новую модель на ту же позицию
+                        available_models.insert(current_position, {
+                            'name': model_data["name"],
+                            'provider': model_data["provider"],
+                            'api_endpoint': model_data["api_endpoint"],
+                            'model_name': model_data["model_name"],
+                            'access_token': "",
+                            'streaming': model_data["streaming"]
+                        })
+                        
+                        # Обновляем список в settings_manager
+                        self.settings_manager.settings['models']['available'] = available_models
+                        self.settings_manager.save_settings()
+                        
+                        # Обновляем интерфейс
                         self.load_settings()
-                        self.parent().update_model_combo()
+                        if self.parent():
+                            self.parent().update_model_combo()
+                        
+                        # Восстанавливаем выделение на отредактированной модели
+                        self.models_list.setCurrentRow(current_position)
 
     def center_relative_to_parent(self):
         """Центрирует окно относительно родительского окна."""
@@ -669,3 +688,60 @@ class SettingsWindow(QDialog):
         self.load_settings()  # Перезагружаем все настройки
         if self.parent():
             self.parent().update_model_combo()  # Обновляем список в главном окне
+
+    def handle_list_key_event(self, event: QKeyEvent, list_widget: QListWidget):
+        """Обработка нажатий клавиш для списков."""
+        if event.modifiers() == Qt.ControlModifier:
+            current_row = list_widget.currentRow()
+            if current_row == -1:  # Нет выбранного элемента
+                return super(QListWidget, list_widget).keyPressEvent(event)
+                
+            if event.key() == Qt.Key_Up and current_row > 0:
+                # Перемещаем элемент вверх
+                item = list_widget.takeItem(current_row)
+                list_widget.insertItem(current_row - 1, item)
+                list_widget.setCurrentRow(current_row - 1)
+                self.save_list_order(list_widget)
+                
+            elif event.key() == Qt.Key_Down and current_row < list_widget.count() - 1:
+                # Перемещаем элемент вниз
+                item = list_widget.takeItem(current_row)
+                list_widget.insertItem(current_row + 1, item)
+                list_widget.setCurrentRow(current_row + 1)
+                self.save_list_order(list_widget)
+                
+            else:
+                super(QListWidget, list_widget).keyPressEvent(event)
+        else:
+            super(QListWidget, list_widget).keyPressEvent(event)
+
+    def save_list_order(self, list_widget: QListWidget):
+        """Сохраняет новый порядок элементов в настройках."""
+        items = [list_widget.item(i).text() for i in range(list_widget.count())]
+        
+        if list_widget == self.languages_list:
+            # Сохраняем порядок языков
+            self.settings_manager.set_available_languages(items)
+            # Обновляем список языков в главном окне
+            if self.parent():
+                self.parent().language_combo.clear()
+                self.parent().language_combo.addItems(items)
+        
+        elif list_widget == self.models_list:
+            # Сохраняем порядок моделей
+            available_models, _ = self.settings_manager.get_models()
+            # Создаем новый список моделей в нужном порядке
+            reordered_models = []
+            for name in items:
+                for model in available_models:
+                    if model['name'] == name:
+                        reordered_models.append(model)
+                        break
+            
+            # Обновляем порядок в settings_manager
+            self.settings_manager.settings['models']['available'] = reordered_models
+            self.settings_manager.save_settings()
+            
+            # Обновляем список моделей в главном окне
+            if self.parent():
+                self.parent().update_model_combo()

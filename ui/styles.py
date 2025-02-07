@@ -81,6 +81,21 @@ QPushButton[text="Отмена"]:hover, QPushButton[text="Удалить"]:hover
     background-color: #5a6268;
 }
 
+QPushButton#refresh_models_button {
+    background-color: transparent;
+    border: 1px solid #ddd;
+    min-width: 24px;
+    padding: 4px;
+}
+
+QPushButton#refresh_models_button:hover {
+    background-color: #f0f0f0;
+}
+
+QPushButton#refresh_models_button:pressed {
+    background-color: #e0e0e0;
+}
+
 QComboBox {
     padding: 2px 20px 2px 5px;
     background-color: #ffffff;
@@ -247,6 +262,21 @@ QPushButton[text="Отмена"], QPushButton[text="Удалить"] {
 
 QPushButton[text="Отмена"]:hover, QPushButton[text="Удалить"]:hover {
     background-color: #5a6268;
+}
+
+QPushButton#refresh_models_button {
+    background-color: transparent;
+    border: 1px solid #444;
+    min-width: 24px;
+    padding: 4px;
+}
+
+QPushButton#refresh_models_button:hover {
+    background-color: #3d3d3d;
+}
+
+QPushButton#refresh_models_button:pressed {
+    background-color: #333333;
 }
 
 QComboBox {

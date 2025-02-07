@@ -19,28 +19,45 @@
         "available": [
             "Русский",
             "Английский",
-            "Русский матерный",
             "Казахский",
-            "Golang",
             "Возвышенный, архаичный стиль русского",
-            "Только смайлики вместо слов"
+            "Русский матерный",
+            "Только смайлики вместо слов",
+            "Golang"
         ],
-        "current": "Русский матерный"
+        "current": "Русский"
     },
     "models": {
         "available": [
             {
-                "name": "gpt-4o - OpenAI",
-                "provider": "OpenAI",
-                "api_endpoint": "https://api.openai.com/v1",
-                "model_name": "gpt-4o",
-                "streaming": false
+                "name": "google/gemini-2.0-pro-exp-02-05:free - OpenRouter",
+                "provider": "OpenRouter",
+                "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "model_name": "google/gemini-2.0-pro-exp-02-05:free",
+                "access_token": "",
+                "streaming": true
             },
             {
                 "name": "google/gemini-2.0-flash-exp:free - OpenRouter",
                 "provider": "OpenRouter",
                 "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
                 "model_name": "google/gemini-2.0-flash-exp:free",
+                "access_token": "",
+                "streaming": true
+            },
+            {
+                "name": "Claude 3 Haiku (Fastest and most compact model for simpler tasks) - Anthropic",
+                "provider": "Anthropic",
+                "api_endpoint": "https://api.anthropic.com",
+                "model_name": "claude-3-haiku-20240307",
+                "access_token": "",
+                "streaming": true
+            },
+            {
+                "name": "gpt-4o - OpenAI",
+                "provider": "OpenAI",
+                "api_endpoint": "https://api.openai.com/v1",
+                "model_name": "gpt-4o",
                 "streaming": false
             },
             {
@@ -72,10 +89,10 @@
                 "streaming": true
             },
             {
-                "name": "google/gemini-2.0-pro-exp-02-05:free - OpenRouter",
-                "provider": "OpenRouter",
-                "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
-                "model_name": "google/gemini-2.0-pro-exp-02-05:free",
+                "name": "gpt-3.5-turbo - OpenAI",
+                "provider": "OpenAI",
+                "api_endpoint": "https://api.openai.com/v1",
+                "model_name": "gpt-3.5-turbo",
                 "access_token": "",
                 "streaming": true
             },
@@ -86,17 +103,9 @@
                 "model_name": "google/gemini-2.0-flash-001",
                 "access_token": "",
                 "streaming": true
-            },
-            {
-                "name": "gpt-3.5-turbo - OpenAI",
-                "provider": "OpenAI",
-                "api_endpoint": "https://api.openai.com/v1",
-                "model_name": "gpt-3.5-turbo",
-                "access_token": "",
-                "streaming": true
             }
         ],
-        "current": "google/gemini-2.0-flash-001 - OpenRouter",
+        "current": "google/gemini-2.0-pro-exp-02-05:free - OpenRouter",
         "system_prompt": "You are a professional translator. Translate the text accurately and competently into {language}. Preserve formatting and terminology. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!",
         "parameters": {
             "stream": true,
@@ -108,9 +117,9 @@
         "mode": "dark"
     },
     "settings_window_geometry": [
-        525,
-        216,
-        400,
+        577,
+        217,
+        642,
         734
     ],
     "appearance": {

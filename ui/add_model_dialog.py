@@ -3,6 +3,7 @@
 from PyQt5.QtWidgets import (
     QDialog,
     QVBoxLayout,
+    QHBoxLayout,
     QLineEdit,
     QComboBox,
     QCheckBox,
@@ -12,13 +13,15 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QProgressBar,
 )
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QSize
+from PyQt5.QtGui import QIcon
 from settings_manager import SettingsManager
 from .styles import get_style
 from typing import Dict, Optional
 from providers.llm_provider_factory import LLMProviderFactory
 import asyncio
 import os
+import ui.resources_rc  # Импорт скомпилированных ресурсов
 
 
 class AddModelDialog(QDialog):
@@ -46,16 +49,26 @@ class AddModelDialog(QDialog):
         self.model_name_edit.setEditable(True)
         self.model_name_edit.setInsertPolicy(QComboBox.InsertPolicy.InsertAtBottom)
         
+        # Создаем горизонтальный layout для модели и кнопки
+        model_layout = QHBoxLayout()
+        model_layout.addWidget(self.model_name_edit)
+        
+        # Кнопка для получения списка моделей
+        self.refresh_models_button = QPushButton()
+        self.refresh_models_button.setObjectName("refresh_models_button")
+        self.refresh_models_button.setIcon(QIcon(":/icons/refresh.svg"))
+        self.refresh_models_button.setFixedSize(24, 24)
+        self.refresh_models_button.setIconSize(QSize(16, 16))
+        self.refresh_models_button.setToolTip("Получить список моделей")
+        self.refresh_models_button.clicked.connect(self.fetch_available_models)
+        model_layout.addWidget(self.refresh_models_button)
+        
         self.api_endpoint_edit = QLineEdit()
         self.stream_checkbox = QCheckBox("Использовать потоковый режим")
         
         # Добавляем поле для API ключа
         self.api_key_edit = QLineEdit()
         self.api_key_edit.setEchoMode(QLineEdit.Password)
-        
-        # Кнопка для получения списка моделей
-        self.refresh_models_button = QPushButton("Получить список моделей")
-        self.refresh_models_button.clicked.connect(self.fetch_available_models)
         
         # Прогресс бар для индикации загрузки
         self.progress_bar = QProgressBar()
@@ -68,10 +81,9 @@ class AddModelDialog(QDialog):
         form_layout.addRow("Название:", self.name_edit)
         form_layout.addRow("Провайдер:", self.provider_combo)
         form_layout.addRow("API Key:", self.api_key_edit)
-        form_layout.addRow("Модель:", self.model_name_edit)
+        form_layout.addRow("Модель:", model_layout)
         form_layout.addRow("API endpoint:", self.api_endpoint_edit)
         form_layout.addRow(self.stream_checkbox)
-        form_layout.addRow(self.refresh_models_button)
         form_layout.addRow(self.progress_bar)
         
         layout.addLayout(form_layout)
@@ -100,9 +112,16 @@ class AddModelDialog(QDialog):
             
         provider = self.provider_combo.currentText()
         
-        # Если модель уже содержит имя провайдера, используем только имя модели
-        if " - " in model_name:
-            model_name = model_name.split(" - ")[1]
+        # Получаем данные модели, если они есть
+        model_data = self.model_name_edit.currentData()
+        
+        if model_data and isinstance(model_data, dict):
+            # Используем model_name из данных модели
+            model_name = model_data.get("model_name", model_name)
+        else:
+            # Если модель уже содержит имя провайдера, используем только имя модели
+            if " - " in model_name:
+                model_name = model_name.split(" - ")[0]
             
         suggested_name = f"{model_name} - {provider}"
         
@@ -141,7 +160,11 @@ class AddModelDialog(QDialog):
             return []
             
         api_keys = {provider: api_key}
-        return await LLMProviderFactory.get_all_available_models(api_keys)
+        models = await LLMProviderFactory.get_all_available_models(api_keys)
+        
+        # Сортируем модели по имени
+        models.sort(key=lambda x: x["name"])
+        return models
         
     def fetch_available_models(self):
         """Получает список доступных моделей от провайдера."""
@@ -155,7 +178,13 @@ class AddModelDialog(QDialog):
                 # Обновляем UI в основном потоке
                 self.model_name_edit.clear()
                 for model in models:
-                    self.model_name_edit.addItem(model["name"], model)
+                    # Форматируем описание: убираем переносы строк и ограничиваем длину
+                    description = model['description'].replace('\n', ' ').strip()
+                    if len(description) > 50:  # Ограничиваем длину описания
+                        description = description[:47] + "..."
+                        
+                    display_name = f"{model['name']} ({description})"
+                    self.model_name_edit.addItem(display_name, model)
                     
             except Exception as e:
                 QMessageBox.warning(
