@@ -4,7 +4,8 @@ from .openai_provider import OpenAIProvider
 from .anthropic_provider import AnthropicProvider
 from .openrouter_provider import OpenRouterProvider
 from .google_provider import GoogleProvider
-from typing import Dict, Any
+from typing import Dict, Any, List
+import asyncio
 
 class LLMProviderFactory:
     """Фабрика провайдеров языковых моделей."""
@@ -32,3 +33,65 @@ class LLMProviderFactory:
             return GoogleProvider(model_info)
         else:
             raise ValueError(f"Неизвестный провайдер: {provider_name}")
+
+    @staticmethod
+    async def get_all_available_models(api_keys: Dict[str, str]) -> List[Dict[str, Any]]:
+        """
+        Получает список всех доступных моделей от всех провайдеров.
+        
+        Args:
+            api_keys: Словарь с API ключами для каждого провайдера
+                     Пример: {"openai": "sk-...", "anthropic": "sk-...", ...}
+        
+        Returns:
+            List[Dict[str, Any]]: Список всех доступных моделей
+        """
+        all_models = []
+        
+        # Создаем базовую конфигурацию для каждого провайдера
+        providers_config = {
+            "openai": {
+                "provider": "openai",
+                "api_endpoint": "https://api.openai.com/v1",
+                "model_name": "gpt-3.5-turbo",
+                "access_token": api_keys.get("openai", "")
+            },
+            "anthropic": {
+                "provider": "anthropic",
+                "api_endpoint": "https://api.anthropic.com",
+                "model_name": "claude-2.1",
+                "access_token": api_keys.get("anthropic", "")
+            },
+            "google": {
+                "provider": "google",
+                "api_endpoint": "",
+                "model_name": "gemini-pro",
+                "access_token": api_keys.get("google", "")
+            },
+            "openrouter": {
+                "provider": "openrouter",
+                "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "model_name": "openai/gpt-3.5-turbo",
+                "access_token": api_keys.get("openrouter", "")
+            }
+        }
+        
+        # Создаем задачи для асинхронного получения моделей
+        tasks = []
+        for provider_name, config in providers_config.items():
+            if config["access_token"]:  # Получаем модели только если есть API ключ
+                provider = LLMProviderFactory.get_provider(config)
+                tasks.append(provider.get_available_models())
+        
+        # Запускаем все задачи параллельно
+        if tasks:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Обрабатываем результаты
+            for result in results:
+                if isinstance(result, list):  # Успешный результат
+                    all_models.extend(result)
+                else:  # Исключение
+                    print(f"Error getting models: {result}")
+        
+        return sorted(all_models, key=lambda x: x["name"])

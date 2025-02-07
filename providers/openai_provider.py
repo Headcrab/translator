@@ -1,5 +1,5 @@
 """Реализация провайдера для OpenAI."""
-from typing import Any, Dict, Optional, Callable, Coroutine
+from typing import Any, Dict, Optional, Callable, Coroutine, List
 from providers.base_provider import BaseProvider
 import aiohttp
 from openai import AsyncOpenAI
@@ -71,4 +71,42 @@ class OpenAIProvider(BaseProvider):
             ) as response:
                 response.raise_for_status()
                 result = await response.json()
-                return result["choices"][0]["message"]["content"].strip() 
+                return result["choices"][0]["message"]["content"].strip()
+
+    async def get_available_models(self) -> List[Dict[str, Any]]:
+        """Получает список доступных моделей от OpenAI."""
+        client = None
+        try:
+            client = AsyncOpenAI(api_key=self.access_token)
+            models = await client.models.list()
+            
+            # Фильтруем только модели для чата и GPT
+            chat_models = []
+            for model in models.data:
+                if model.id.startswith(("gpt-", "text-davinci-")):
+                    # Создаем описание на основе ID модели
+                    description = ""
+                    if "gpt-4" in model.id:
+                        description = "Самая мощная модель GPT-4 с расширенными возможностями"
+                    elif "gpt-3.5" in model.id:
+                        description = "Быстрая и эффективная модель GPT-3.5"
+                    elif "text-davinci" in model.id:
+                        description = "Классическая модель Davinci"
+                    else:
+                        description = f"OpenAI {model.id} model"
+                    
+                    chat_models.append({
+                        "name": f"OpenAI - {model.id}",
+                        "model_name": model.id,
+                        "description": description
+                    })
+            
+            return sorted(chat_models, key=lambda x: x["model_name"])
+            
+        except Exception as e:
+            print(f"Error getting OpenAI models: {e}")
+            return []
+            
+        finally:
+            if client:
+                await client.close() 

@@ -79,4 +79,29 @@ class GoogleProvider(BaseProvider):
                 prompt += f"Text to translate: {msg['content']}\n\n"
             elif msg["role"] == "assistant":
                 prompt += f"Translation: {msg['content']}\n\n"
-        return prompt.strip() 
+        return prompt.strip()
+
+    async def get_available_models(self) -> List[Dict[str, Any]]:
+        """Получает список доступных моделей от Google."""
+        try:
+            # Получаем список моделей через синхронный API в отдельном потоке
+            models = await asyncio.get_event_loop().run_in_executor(
+                None,
+                genai.list_models
+            )
+            
+            # Фильтруем только модели для чата и генерации текста
+            chat_models = []
+            for model in models:
+                if "generateContent" in model.supported_generation_methods:
+                    chat_models.append({
+                        "name": f"Google - {model.name}",
+                        "model_name": model.name,
+                        "description": model.description
+                    })
+            
+            return sorted(chat_models, key=lambda x: x["model_name"])
+            
+        except Exception as e:
+            print(f"Error getting Google models: {e}")
+            return [] 

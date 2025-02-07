@@ -1,5 +1,5 @@
 """Реализация провайдера для Anthropic."""
-from typing import Optional, Callable, Coroutine
+from typing import Optional, Callable, Coroutine, List, Dict, Any
 from providers.base_provider import BaseProvider
 import aiohttp
 import json
@@ -83,4 +83,42 @@ class AnthropicProvider(BaseProvider):
                         
         except Exception as e:
             logging.error(f"Error in translate: {e}")
-            raise 
+            raise
+
+    async def get_available_models(self) -> List[Dict[str, Any]]:
+        """Получает список доступных моделей от Anthropic."""
+        # Anthropic не предоставляет API для получения списка моделей,
+        # поэтому возвращаем захардкоженный список известных моделей
+        models = [
+            {
+                "name": "Anthropic - Claude 3 Opus",
+                "model_name": "claude-3-opus-20240229",
+                "description": "Most capable model for highly complex tasks"
+            },
+            {
+                "name": "Anthropic - Claude 3 Sonnet",
+                "model_name": "claude-3-sonnet-20240229",
+                "description": "Ideal balance of intelligence and speed"
+            },
+            {
+                "name": "Anthropic - Claude 3 Haiku",
+                "model_name": "claude-3-haiku-20240307",
+                "description": "Fastest and most compact model for simpler tasks"
+            },
+            {
+                "name": "Anthropic - Claude 2.1",
+                "model_name": "claude-2.1",
+                "description": "Previous generation model with strong capabilities"
+            },
+            {
+                "name": "Anthropic - Claude 2.0",
+                "model_name": "claude-2.0",
+                "description": "Previous generation model"
+            },
+            {
+                "name": "Anthropic - Claude Instant",
+                "model_name": "claude-instant-1.2",
+                "description": "Fast and cost-effective model"
+            }
+        ]
+        return models 

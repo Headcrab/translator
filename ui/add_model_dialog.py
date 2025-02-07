@@ -8,11 +8,17 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QFormLayout,
     QDialogButtonBox,
+    QPushButton,
+    QMessageBox,
+    QProgressBar,
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from settings_manager import SettingsManager
 from .styles import get_style
-from typing import Dict
+from typing import Dict, Optional
+from providers.llm_provider_factory import LLMProviderFactory
+import asyncio
+import os
 
 
 class AddModelDialog(QDialog):
@@ -36,24 +42,43 @@ class AddModelDialog(QDialog):
             "OpenRouter"
         ])
         
-        self.model_name_edit = QLineEdit()
-        self.api_key_edit = QLineEdit()
+        self.model_name_edit = QComboBox()
+        self.model_name_edit.setEditable(True)
+        self.model_name_edit.setInsertPolicy(QComboBox.InsertPolicy.InsertAtBottom)
+        
         self.api_endpoint_edit = QLineEdit()
         self.stream_checkbox = QCheckBox("Использовать потоковый режим")
+        
+        # Добавляем поле для API ключа
+        self.api_key_edit = QLineEdit()
+        self.api_key_edit.setEchoMode(QLineEdit.Password)
+        
+        # Кнопка для получения списка моделей
+        self.refresh_models_button = QPushButton("Получить список моделей")
+        self.refresh_models_button.clicked.connect(self.fetch_available_models)
+        
+        # Прогресс бар для индикации загрузки
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(0)  # Бесконечная анимация
+        self.progress_bar.hide()
         
         # Добавляем поля в layout
         form_layout = QFormLayout()
         form_layout.addRow("Название:", self.name_edit)
         form_layout.addRow("Провайдер:", self.provider_combo)
+        form_layout.addRow("API Key:", self.api_key_edit)
         form_layout.addRow("Модель:", self.model_name_edit)
-        form_layout.addRow("API ключ:", self.api_key_edit)
         form_layout.addRow("API endpoint:", self.api_endpoint_edit)
         form_layout.addRow(self.stream_checkbox)
+        form_layout.addRow(self.refresh_models_button)
+        form_layout.addRow(self.progress_bar)
         
         layout.addLayout(form_layout)
         
-        # Подсказки для разных провайдеров
+        # Подсказки для разных провайдеров и автоматическое формирование названия
         self.provider_combo.currentTextChanged.connect(self.on_provider_changed)
+        self.model_name_edit.currentTextChanged.connect(self.update_model_name)
         
         # Кнопки
         buttons = QDialogButtonBox(
@@ -65,29 +90,114 @@ class AddModelDialog(QDialog):
         
         self.setLayout(layout)
         
+        # Инициализация начальных значений
+        self.on_provider_changed(self.provider_combo.currentText())
+        
+    def update_model_name(self, model_name: str):
+        """Обновляет название модели на основе выбранного провайдера и имени модели."""
+        if not model_name:
+            return
+            
+        provider = self.provider_combo.currentText()
+        
+        # Если модель уже содержит имя провайдера, используем только имя модели
+        if " - " in model_name:
+            model_name = model_name.split(" - ")[1]
+            
+        suggested_name = f"{model_name} - {provider}"
+        
+        # Обновляем название только если оно не было изменено вручную
+        current_name = self.name_edit.text().strip()
+        if not current_name or current_name.endswith(f" - {provider}"):
+            self.name_edit.setText(suggested_name)
+        
     def on_provider_changed(self, provider: str):
         """Обновляет подсказки в зависимости от выбранного провайдера."""
+        # Очищаем список моделей
+        self.model_name_edit.clear()
+        
         if provider == "OpenAI":
-            self.model_name_edit.setPlaceholderText("gpt-3.5-turbo")
-            self.api_endpoint_edit.setPlaceholderText("https://api.openai.com/v1")
+            self.api_endpoint_edit.setText("https://api.openai.com/v1")
+            self.api_key_edit.setText(os.getenv("OPENAI_API_KEY", ""))
         elif provider == "Anthropic":
-            self.model_name_edit.setPlaceholderText("claude-2")
-            self.api_endpoint_edit.setPlaceholderText("https://api.anthropic.com")
+            self.api_endpoint_edit.setText("https://api.anthropic.com")
+            self.api_key_edit.setText(os.getenv("ANTHROPIC_API_KEY", ""))
         elif provider == "Google":
-            self.model_name_edit.setPlaceholderText("gemini-pro")
-            self.api_endpoint_edit.setPlaceholderText("Оставьте пустым для Google AI")
+            self.api_endpoint_edit.setText("")
+            self.api_key_edit.setText(os.getenv("GOOGLE_API_KEY", ""))
         elif provider == "OpenRouter":
-            self.model_name_edit.setPlaceholderText("openai/gpt-3.5-turbo")
-            self.api_endpoint_edit.setPlaceholderText("https://openrouter.ai/api/v1")
+            self.api_endpoint_edit.setText("https://openrouter.ai/api/v1/chat/completions")
+            self.api_key_edit.setText(os.getenv("OPENROUTER_API_KEY", ""))
+        
+        # Обновляем название при смене провайдера
+        self.update_model_name(self.model_name_edit.currentText())
+        
+    async def _fetch_models(self):
+        """Асинхронно получает список моделей от выбранного провайдера."""
+        provider = self.provider_combo.currentText().lower()
+        api_key = self.api_key_edit.text().strip()
+        
+        if not api_key:
+            return []
             
-    def get_model_info(self) -> Dict[str, str]:
+        api_keys = {provider: api_key}
+        return await LLMProviderFactory.get_all_available_models(api_keys)
+        
+    def fetch_available_models(self):
+        """Получает список доступных моделей от провайдера."""
+        self.refresh_models_button.setEnabled(False)
+        self.progress_bar.show()
+        
+        async def fetch():
+            try:
+                models = await self._fetch_models()
+                
+                # Обновляем UI в основном потоке
+                self.model_name_edit.clear()
+                for model in models:
+                    self.model_name_edit.addItem(model["name"], model)
+                    
+            except Exception as e:
+                QMessageBox.warning(
+                    self,
+                    "Ошибка",
+                    f"Не удалось получить список моделей: {str(e)}"
+                )
+            finally:
+                self.refresh_models_button.setEnabled(True)
+                self.progress_bar.hide()
+        
+        # Запускаем асинхронную операцию
+        asyncio.create_task(fetch())
+        
+    def get_model_info(self) -> Optional[Dict[str, str]]:
         """Возвращает информацию о модели."""
+        name = self.name_edit.text().strip()
+        provider = self.provider_combo.currentText()
+        model_name = self.model_name_edit.currentText()
+        api_endpoint = self.api_endpoint_edit.text().strip()
+        api_key = self.api_key_edit.text().strip()
+        
+        # Если модель выбрана из списка, извлекаем model_name из данных модели
+        current_data = self.model_name_edit.currentData()
+        if current_data and isinstance(current_data, dict):
+            model_name = current_data["model_name"]
+        
+        # Проверяем обязательные поля
+        if not all([name, provider, model_name, api_endpoint]):
+            QMessageBox.warning(
+                self,
+                "Ошибка",
+                "Пожалуйста, заполните все обязательные поля"
+            )
+            return None
+            
         return {
-            "name": self.name_edit.text(),
-            "provider": self.provider_combo.currentText(),
-            "model_name": self.model_name_edit.text(),
-            "access_token": self.api_key_edit.text(),
-            "api_endpoint": self.api_endpoint_edit.text(),
+            "name": name,
+            "provider": provider,
+            "model_name": model_name,
+            "api_endpoint": api_endpoint,
+            "access_token": api_key,
             "streaming": self.stream_checkbox.isChecked()
         }
 

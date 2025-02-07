@@ -537,7 +537,8 @@ class SettingsWindow(QDialog):
                     provider=model_data["provider"],
                     api_endpoint=model_data["api_endpoint"],
                     model_name=model_data["model_name"],
-                    access_token=model_data["access_token"]
+                    access_token="",
+                    streaming=model_data["streaming"]
                 )
                 self.update_models_list()
 
@@ -623,8 +624,11 @@ class SettingsWindow(QDialog):
                 dialog.name_edit.setText(current_model['name'])
                 dialog.provider_combo.setCurrentText(current_model['provider'])
                 dialog.api_endpoint_edit.setText(current_model['api_endpoint'])
-                dialog.model_name_edit.setText(current_model['model_name'])
-                dialog.api_key_edit.setText(current_model.get('access_token', ''))
+                
+                # Добавляем текущую модель в комбобокс и выбираем её
+                dialog.model_name_edit.addItem(current_model['model_name'])
+                dialog.model_name_edit.setCurrentText(current_model['model_name'])
+                
                 dialog.stream_checkbox.setChecked(current_model.get('streaming', False))
                 
                 if dialog.exec_() == QDialog.Accepted:
@@ -632,13 +636,13 @@ class SettingsWindow(QDialog):
                     if model_data:
                         # Удаляем старую модель
                         self.settings_manager.remove_model(current_model_name)
-                        # Добавляем новую модель
+                        # Добавляем новую модель, передавая пустой токен
                         self.settings_manager.add_model(
                             name=model_data["name"],
                             provider=model_data["provider"],
                             api_endpoint=model_data["api_endpoint"],
                             model_name=model_data["model_name"],
-                            access_token=model_data["access_token"],
+                            access_token="",
                             streaming=model_data["streaming"]
                         )
                         self.load_settings()

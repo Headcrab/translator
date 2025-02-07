@@ -1,7 +1,7 @@
 {
     "window": {
-        "x": 40,
-        "y": 152,
+        "x": 213,
+        "y": 153,
         "width": 1370,
         "height": 801
     },
@@ -25,24 +25,15 @@
             "Возвышенный, архаичный стиль русского",
             "Только смайлики вместо слов"
         ],
-        "current": "Возвышенный, архаичный стиль русского"
+        "current": "Русский матерный"
     },
     "models": {
         "available": [
-            {
-                "name": "gpt-4o-mini - OpenAI",
-                "provider": "OpenAI",
-                "api_endpoint": "https://api.openai.com/v1",
-                "model_name": "gpt-4o-mini",
-                "access_token": "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",
-                "streaming": true
-            },
             {
                 "name": "gpt-4o - OpenAI",
                 "provider": "OpenAI",
                 "api_endpoint": "https://api.openai.com/v1",
                 "model_name": "gpt-4o",
-                "access_token": "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",
                 "streaming": false
             },
             {
@@ -50,7 +41,6 @@
                 "provider": "OpenRouter",
                 "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
                 "model_name": "google/gemini-2.0-flash-exp:free",
-                "access_token": "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",
                 "streaming": false
             },
             {
@@ -58,7 +48,6 @@
                 "provider": "OpenRouter",
                 "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
                 "model_name": "openai/gpt-4o-mini",
-                "access_token": "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",
                 "streaming": true
             },
             {
@@ -66,7 +55,6 @@
                 "provider": "Anthropic",
                 "api_endpoint": "https://api.anthropic.com",
                 "model_name": "claude-3-5-sonnet-20241022",
-                "access_token": "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",
                 "streaming": true
             },
             {
@@ -74,7 +62,6 @@
                 "provider": "Google",
                 "api_endpoint": "",
                 "model_name": "gemini-2.0-flash-exp",
-                "access_token": "AIzaSyB3JlIZsL55l-oB-TIWTRjPnjUM0GXH164",
                 "streaming": true
             },
             {
@@ -82,11 +69,34 @@
                 "provider": "OpenRouter",
                 "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
                 "model_name": "deepseek/deepseek-r1",
-                "access_token": "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",
+                "streaming": true
+            },
+            {
+                "name": "google/gemini-2.0-pro-exp-02-05:free - OpenRouter",
+                "provider": "OpenRouter",
+                "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "model_name": "google/gemini-2.0-pro-exp-02-05:free",
+                "access_token": "",
+                "streaming": true
+            },
+            {
+                "name": "google/gemini-2.0-flash-001 - OpenRouter",
+                "provider": "OpenRouter",
+                "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "model_name": "google/gemini-2.0-flash-001",
+                "access_token": "",
+                "streaming": true
+            },
+            {
+                "name": "gpt-3.5-turbo - OpenAI",
+                "provider": "OpenAI",
+                "api_endpoint": "https://api.openai.com/v1",
+                "model_name": "gpt-3.5-turbo",
+                "access_token": "",
                 "streaming": true
             }
         ],
-        "current": "gemini-2.0-flash-exp - Google",
+        "current": "google/gemini-2.0-flash-001 - OpenRouter",
         "system_prompt": "You are a professional translator. Translate the text accurately and competently into {language}. Preserve formatting and terminology. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!",
         "parameters": {
             "stream": true,
@@ -98,8 +108,8 @@
         "mode": "dark"
     },
     "settings_window_geometry": [
-        741,
-        218,
+        525,
+        216,
         400,
         734
     ],

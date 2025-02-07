@@ -1,5 +1,5 @@
 """Реализация провайдера для OpenRouter."""
-from typing import Optional, Callable, Coroutine
+from typing import Optional, Callable, Coroutine, List, Dict, Any
 from providers.base_provider import BaseProvider
 import aiohttp
 import json
@@ -9,9 +9,9 @@ class OpenRouterProvider(BaseProvider):
     """Провайдер для работы с OpenRouter API."""
     
     def __init__(self, config: dict):
-        self.access_token = config["access_token"]
-        self.model_name = config["model_name"]
-        self.api_endpoint = config.get("api_endpoint", "https://openrouter.ai/api/v1/chat/completions")
+        if "access_token" not in config:
+            config["access_token"] = ""
+        super().__init__(config)  # наследуем и инициализируем access_token, model_name и api_endpoint
         self.stream_options = config.get("stream_options", {})
     
     async def translate(
@@ -73,4 +73,39 @@ class OpenRouterProvider(BaseProvider):
                                 logging.error(f"Error processing chunk: {e}")
                                 continue
         
-        return "".join(full_response) 
+        return "".join(full_response)
+
+    async def get_available_models(self) -> List[Dict[str, Any]]:
+        """Получает список доступных моделей от OpenRouter."""
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "HTTP-Referer": "http://localhost",
+            "X-Title": "LLM Translator"
+        }
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    "https://openrouter.ai/api/v1/models",
+                    headers=headers
+                ) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logging.error(f"OpenRouter API error: {error_text}")
+                        return []
+                    
+                    data = await response.json()
+                    models = []
+                    
+                    for model in data.get("data", []):
+                        models.append({
+                            "name": f"OpenRouter - {model['name']}",
+                            "model_name": model['id'],
+                            "description": model.get('description', f"OpenRouter {model['name']} model")
+                        })
+                    
+                    return sorted(models, key=lambda x: x["model_name"])
+                    
+        except Exception as e:
+            logging.error(f"Error getting OpenRouter models: {e}")
+            return [] 
