@@ -103,6 +103,22 @@
                 "model_name": "google/gemini-2.0-flash-001",
                 "access_token": "",
                 "streaming": true
+            },
+            {
+                "name": "OpenRouter - OpenRouter - Anthropic: Claude 3 Haiku (Claude 3 Haiku is Anthropic's fastest and most ...)",
+                "provider": "OpenRouter",
+                "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "model_name": "anthropic/claude-3-haiku",
+                "access_token": "",
+                "streaming": false
+            },
+            {
+                "name": "OpenRouter - Anthropic: Claude 3.5 Sonnet (2024-06-20) (self-moderated) (Claude 3.5 Sonnet delivers better-than-Opus cap...) - OpenRouter",
+                "provider": "OpenRouter",
+                "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "model_name": "anthropic/claude-3.5-sonnet-20240620:beta",
+                "access_token": "",
+                "streaming": true
             }
         ],
         "current": "google/gemini-2.0-pro-exp-02-05:free - OpenRouter",

@@ -18,7 +18,6 @@ from PyQt5.QtWidgets import (
     QTabWidget,
     QFontComboBox,
     QFormLayout,
-    QListWidgetItem,
 )
 from PyQt5.QtGui import QFont, QKeyEvent
 from PyQt5.QtCore import Qt
@@ -444,7 +443,9 @@ class SettingsWindow(QDialog):
         available_models, _ = self.settings_manager.get_models()
         self.models_list.clear()
         for model in available_models:
-            self.models_list.addItem(model['name'])
+            # Используем формат "model_name - provider" для отображения
+            display_name = f"{model['model_name']} - {model['provider']}"
+            self.models_list.addItem(display_name)
 
         # Обновляем загрузку системного промпта
         system_prompt = self.settings_manager.settings.get("models", {}).get("system_prompt", "")
@@ -535,6 +536,14 @@ class SettingsWindow(QDialog):
         dialog.center_relative_to_parent()
         dialog.apply_theme()
         
+        # Добавляем обработчики событий для автоматического обновления названия
+        dialog.provider_combo.currentTextChanged.connect(
+            lambda: self.update_model_name(dialog)
+        )
+        dialog.model_name_edit.currentTextChanged.connect(
+            lambda: self.update_model_name(dialog)
+        )
+        
         if dialog.exec_() == QDialog.Accepted:
             model_data = dialog.get_model_info()
             if model_data:
@@ -562,7 +571,14 @@ class SettingsWindow(QDialog):
             )
 
             if reply == QMessageBox.Yes:
-                self.settings_manager.remove_model(model_name)
+                # Получаем текущий список моделей
+                available_models, _ = self.settings_manager.get_models()
+                # Находим модель по отображаемому имени
+                for model in available_models:
+                    if f"{model['model_name']} - {model['provider']}" == model_name:
+                        self.settings_manager.remove_model(model['name'])
+                        break
+                
                 self.load_settings()
                 # Обновляем список моделей в главном окне через родительское окно
                 self.parent().update_model_combo()
@@ -620,10 +636,16 @@ class SettingsWindow(QDialog):
         """Редактирует выбранную модель."""
         selected = self.models_list.currentItem()
         if selected:
-            current_model_name = selected.text()
-            current_position = self.models_list.currentRow()  # Сохраняем текущую позицию
+            display_name = selected.text()
+            current_position = self.models_list.currentRow()
             available_models, _ = self.settings_manager.get_models()
-            current_model = next((model for model in available_models if model['name'] == current_model_name), None)
+            
+            # Находим модель по отображаемому имени
+            current_model = next(
+                (model for model in available_models 
+                 if f"{model['model_name']} - {model['provider']}" == display_name),
+                None
+            )
             
             if current_model:
                 dialog = AddModelDialog(self)
@@ -638,13 +660,21 @@ class SettingsWindow(QDialog):
                 
                 dialog.stream_checkbox.setChecked(current_model.get('streaming', False))
                 
+                # Добавляем обработчики событий для автоматического обновления названия
+                dialog.provider_combo.currentTextChanged.connect(
+                    lambda: self.update_model_name(dialog)
+                )
+                dialog.model_name_edit.currentTextChanged.connect(
+                    lambda: self.update_model_name(dialog)
+                )
+                
                 if dialog.exec_() == QDialog.Accepted:
                     model_data = dialog.get_model_info()
                     if model_data:
                         # Получаем текущий список моделей
                         available_models, _ = self.settings_manager.get_models()
                         # Удаляем старую модель из списка
-                        available_models = [m for m in available_models if m['name'] != current_model_name]
+                        available_models = [m for m in available_models if m['name'] != current_model['name']]
                         # Вставляем новую модель на ту же позицию
                         available_models.insert(current_position, {
                             'name': model_data["name"],
@@ -666,6 +696,16 @@ class SettingsWindow(QDialog):
                         
                         # Восстанавливаем выделение на отредактированной модели
                         self.models_list.setCurrentRow(current_position)
+
+    def update_model_name(self, dialog):
+        """Обновляет название модели на основе провайдера и имени модели."""
+        provider = dialog.provider_combo.currentText()
+        model_name = dialog.model_name_edit.currentText()
+        
+        if provider and model_name:
+            # Формируем название в формате: Model - Provider
+            new_name = f"{model_name} - {provider}"
+            dialog.name_edit.setText(new_name)
 
     def center_relative_to_parent(self):
         """Центрирует окно относительно родительского окна."""
