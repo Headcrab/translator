@@ -22,10 +22,12 @@
             "Казахский",
             "Возвышенный, архаичный стиль русского",
             "Русский матерный",
+            "Синдарин",
             "Только смайлики вместо слов",
-            "Golang"
+            "Эсперанто",
+            "Морзе"
         ],
-        "current": "Русский"
+        "current": "Английский"
     },
     "models": {
         "available": [
@@ -46,7 +48,7 @@
                 "streaming": true
             },
             {
-                "name": "Claude 3 Haiku (Fastest and most compact model for simpler tasks) - Anthropic",
+                "name": "claude-3-haiku-20240307 - Anthropic",
                 "provider": "Anthropic",
                 "api_endpoint": "https://api.anthropic.com",
                 "model_name": "claude-3-haiku-20240307",
@@ -58,7 +60,8 @@
                 "provider": "OpenAI",
                 "api_endpoint": "https://api.openai.com/v1",
                 "model_name": "gpt-4o",
-                "streaming": false
+                "access_token": "",
+                "streaming": true
             },
             {
                 "name": "openai/gpt-4o-mini - OpenRouter",
@@ -105,23 +108,31 @@
                 "streaming": true
             },
             {
-                "name": "OpenRouter - OpenRouter - Anthropic: Claude 3 Haiku (Claude 3 Haiku is Anthropic's fastest and most ...)",
+                "name": "anthropic/claude-3-sonnet:beta - OpenRouter",
                 "provider": "OpenRouter",
                 "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
-                "model_name": "anthropic/claude-3-haiku",
+                "model_name": "anthropic/claude-3-sonnet:beta",
                 "access_token": "",
-                "streaming": false
+                "streaming": true
             },
             {
-                "name": "OpenRouter - Anthropic: Claude 3.5 Sonnet (2024-06-20) (self-moderated) (Claude 3.5 Sonnet delivers better-than-Opus cap...) - OpenRouter",
+                "name": "anthropic/claude-3.5-sonnet-20240620:beta - OpenRouter",
                 "provider": "OpenRouter",
                 "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
                 "model_name": "anthropic/claude-3.5-sonnet-20240620:beta",
                 "access_token": "",
                 "streaming": true
+            },
+            {
+                "name": "models/gemini-2.0-pro-exp-02-05 - Google",
+                "provider": "Google",
+                "api_endpoint": "",
+                "model_name": "models/gemini-2.0-pro-exp-02-05",
+                "access_token": "",
+                "streaming": true
             }
         ],
-        "current": "google/gemini-2.0-pro-exp-02-05:free - OpenRouter",
+        "current": "claude-3-haiku-20240307 - Anthropic",
         "system_prompt": "You are a professional translator. Translate the text accurately and competently into {language}. Preserve formatting and terminology. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!",
         "parameters": {
             "stream": true,

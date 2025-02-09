@@ -443,8 +443,7 @@ class SettingsWindow(QDialog):
         available_models, _ = self.settings_manager.get_models()
         self.models_list.clear()
         for model in available_models:
-            # Используем формат "model_name - provider" для отображения
-            display_name = f"{model['model_name']} - {model['provider']}"
+            display_name = model["name"]
             self.models_list.addItem(display_name)
 
         # Обновляем загрузку системного промпта
@@ -575,7 +574,7 @@ class SettingsWindow(QDialog):
                 available_models, _ = self.settings_manager.get_models()
                 # Находим модель по отображаемому имени
                 for model in available_models:
-                    if f"{model['model_name']} - {model['provider']}" == model_name:
+                    if model["name"] == model_name:
                         self.settings_manager.remove_model(model['name'])
                         break
                 
@@ -643,7 +642,7 @@ class SettingsWindow(QDialog):
             # Находим модель по отображаемому имени
             current_model = next(
                 (model for model in available_models 
-                 if f"{model['model_name']} - {model['provider']}" == display_name),
+                 if model["name"] == display_name),
                 None
             )
             

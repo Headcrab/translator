@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QMessageBox,
     QProgressBar,
+    QLabel
 )
 from PyQt5.QtCore import Qt, QTimer, QSize
 from PyQt5.QtGui import QIcon
@@ -82,7 +83,8 @@ class AddModelDialog(QDialog):
         form_layout.addRow("Провайдер:", self.provider_combo)
         form_layout.addRow("API Key:", self.api_key_edit)
         form_layout.addRow("Модель:", model_layout)
-        form_layout.addRow("API endpoint:", self.api_endpoint_edit)
+        self.api_endpoint_label = QLabel("API endpoint:")
+        form_layout.addRow(self.api_endpoint_label, self.api_endpoint_edit)
         form_layout.addRow(self.stream_checkbox)
         form_layout.addRow(self.progress_bar)
         
@@ -106,34 +108,27 @@ class AddModelDialog(QDialog):
         self.on_provider_changed(self.provider_combo.currentText())
         
     def update_model_name(self, model_name: str):
-        """Обновляет название модели на основе выбранного провайдера и имени модели."""
+        """Обновляет название модели на основе выбранного провайдера и имени модели в формате 'model_identifier - Provider'."""
         if not model_name:
             return
-            
         provider = self.provider_combo.currentText()
-        
-        # Получаем данные модели, если они есть
         model_data = self.model_name_edit.currentData()
-        
         if model_data and isinstance(model_data, dict):
-            # Используем model_name из данных модели
-            model_name = model_data.get("model_name", model_name)
+            identifier = model_data.get("model_name", model_name)
         else:
-            # Если модель уже содержит имя провайдера, используем только имя модели
-            if " - " in model_name:
-                model_name = model_name.split(" - ")[0]
-            
-        suggested_name = f"{model_name} - {provider}"
-        
-        # Обновляем название только если оно не было изменено вручную
-        current_name = self.name_edit.text().strip()
-        if not current_name or current_name.endswith(f" - {provider}"):
-            self.name_edit.setText(suggested_name)
+            identifier = model_name.split(" - ")[0] if " - " in model_name else model_name
+        new_name = f"{identifier} - {provider}"
+        self.name_edit.setText(new_name)
         
     def on_provider_changed(self, provider: str):
         """Обновляет подсказки в зависимости от выбранного провайдера."""
         # Очищаем список моделей
         self.model_name_edit.clear()
+        
+        # Скрываем/показываем поле endpoint в зависимости от провайдера
+        is_google = provider == "Google"
+        self.api_endpoint_edit.setVisible(not is_google)
+        self.api_endpoint_label.setVisible(not is_google)
         
         if provider == "OpenAI":
             self.api_endpoint_edit.setText("https://api.openai.com/v1")
@@ -178,12 +173,7 @@ class AddModelDialog(QDialog):
                 # Обновляем UI в основном потоке
                 self.model_name_edit.clear()
                 for model in models:
-                    # Форматируем описание: убираем переносы строк и ограничиваем длину
-                    description = model['description'].replace('\n', ' ').strip()
-                    if len(description) > 50:  # Ограничиваем длину описания
-                        description = description[:47] + "..."
-                        
-                    display_name = f"{model['name']} ({description})"
+                    display_name = model["model_name"]
                     self.model_name_edit.addItem(display_name, model)
                     
             except Exception as e:
@@ -213,7 +203,11 @@ class AddModelDialog(QDialog):
             model_name = current_data["model_name"]
         
         # Проверяем обязательные поля
-        if not all([name, provider, model_name, api_endpoint]):
+        required_fields = [name, provider, model_name]
+        if provider != "Google":
+            required_fields.append(api_endpoint)
+            
+        if not all(required_fields):
             QMessageBox.warning(
                 self,
                 "Ошибка",
@@ -225,7 +219,7 @@ class AddModelDialog(QDialog):
             "name": name,
             "provider": provider,
             "model_name": model_name,
-            "api_endpoint": api_endpoint,
+            "api_endpoint": api_endpoint if provider != "Google" else "",
             "access_token": api_key,
             "streaming": self.stream_checkbox.isChecked()
         }
