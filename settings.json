@@ -1,9 +1,9 @@
 {
     "window": {
-        "x": 213,
-        "y": 153,
-        "width": 1370,
-        "height": 801
+        "x": 1020,
+        "y": 395,
+        "width": 818,
+        "height": 581
     },
     "hotkey": {
         "modifiers": [
@@ -132,7 +132,7 @@
                 "streaming": true
             }
         ],
-        "current": "claude-3-haiku-20240307 - Anthropic",
+        "current": "google/gemini-2.0-pro-exp-02-05:free - OpenRouter",
         "system_prompt": "You are a professional translator. Translate the text accurately and competently into {language}. Preserve formatting and terminology. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!",
         "parameters": {
             "stream": true,
@@ -144,8 +144,8 @@
         "mode": "dark"
     },
     "settings_window_geometry": [
-        577,
-        217,
+        1108,
+        349,
         642,
         734
     ],

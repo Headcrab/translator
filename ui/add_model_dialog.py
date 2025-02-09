@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QProgressBar,
     QLabel
 )
-from PyQt5.QtCore import Qt, QTimer, QSize
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon
 from settings_manager import SettingsManager
 from .styles import get_style
@@ -22,7 +22,6 @@ from typing import Dict, Optional
 from providers.llm_provider_factory import LLMProviderFactory
 import asyncio
 import os
-import ui.resources_rc  # Импорт скомпилированных ресурсов
 
 
 class AddModelDialog(QDialog):
@@ -106,6 +105,8 @@ class AddModelDialog(QDialog):
         
         # Инициализация начальных значений
         self.on_provider_changed(self.provider_combo.currentText())
+        self.adjustSize()
+        self.resize(self.width() + 100, self.height())
         
     def update_model_name(self, model_name: str):
         """Обновляет название модели на основе выбранного провайдера и имени модели в формате 'model_identifier - Provider'."""

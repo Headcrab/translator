@@ -329,7 +329,11 @@ class MainWindow(QMainWindow):
         super().changeEvent(event)
 
     def closeEvent(self, event):
-        """Переопределяем закрытие окна для скрытия в трей"""
+        """Переопределяем закрытие окна для скрытия в трей и сохранение геометрии"""
+        geometry = self.geometry()
+        self.settings_manager.set_window_geometry(
+            geometry.x(), geometry.y(), geometry.width(), geometry.height()
+        )
         event.ignore()
         self.hide()
 

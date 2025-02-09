@@ -642,7 +642,7 @@ class SettingsWindow(QDialog):
             # Находим модель по отображаемому имени
             current_model = next(
                 (model for model in available_models 
-                 if model["name"] == display_name),
+                if model["name"] == display_name),
                 None
             )
             

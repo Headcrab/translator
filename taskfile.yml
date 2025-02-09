@@ -13,19 +13,19 @@ tasks:
       - python main.py
 
   build:
-    desc: Сборка для текущей платформы
+    desc: Сборка для текущей платформы с уменьшением размера бинарника
     deps: [install]
     cmds:
-      - pyinstaller --onefile --noconsole --name translator --add-data "settings.json:." main.py
+      - pyinstaller --onefile --strip --noconsole --name translator --add-data "settings.json:." main.py
 
   build-windows:
-    desc: Сборка для Windows
+    desc: Сборка для Windows с минимальным размером (убедитесь, что UPX установлен)
     deps: [install]
     cmds:
       - pyinstaller --onefile --noconsole --name translator.exe --add-data "settings.json;." --distpath ./dist/windows main.py
 
   build-linux:
-    desc: Кросс-компиляция для Linux через Docker
+    desc: Кросс-компиляция для Linux через Docker с уменьшенным размером (в контейнере можно применять --strip)
     cmds:
       - docker build -t translator-linux .
       - docker create --name temp translator-linux
@@ -34,10 +34,10 @@ tasks:
       - docker rmi translator-linux
 
   build-mac:
-    desc: Сборка для MacOS
+    desc: Сборка для MacOS с уменьшением размера бинарника
     deps: [install]
     cmds:
-      - pyinstaller --onefile --noconsole --name translator --add-data "settings.json:." --distpath ./dist/macos main.py
+      - pyinstaller --onefile --strip --noconsole --name translator --add-data "settings.json:." --distpath ./dist/macos main.py
 
   clean:
     desc: Очистка артефактов сборки
