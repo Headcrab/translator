@@ -454,6 +454,36 @@ QProgressBar::chunk {
 
 """
 
+COPY_BUTTON_LIGHT_STYLE = """
+QToolButton { 
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+QToolButton:hover { 
+    background-color: #f0f0f0;
+    border: 1px solid #007bff;
+}
+QToolButton:pressed { 
+    background-color: #e0e0e0;
+}
+"""
+
+COPY_BUTTON_DARK_STYLE = """
+QToolButton { 
+    background-color: #2d2d2d;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+QToolButton:hover { 
+    background-color: #3d3d3d;
+    border: 1px solid #0d6efd;
+}
+QToolButton:pressed { 
+    background-color: #333333;
+}
+"""
+
 def get_style(theme_mode="system"):
     """Возвращает стиль в зависимости от выбранной темы.
     
@@ -474,8 +504,9 @@ def get_style(theme_mode="system"):
     # Выбираем соответствующие стили
     main_style = DARK_STYLE if is_dark else LIGHT_STYLE
     tool_button_style = TOOL_BUTTON_DARK_STYLE if is_dark else TOOL_BUTTON_LIGHT_STYLE
+    copy_button_style = COPY_BUTTON_DARK_STYLE if is_dark else COPY_BUTTON_LIGHT_STYLE
     
-    return main_style + "\n" + tool_button_style
+    return main_style + "\n" + tool_button_style + "\n" + copy_button_style
 
 def get_tab_style(theme_mode: str) -> str:
     """Возвращает стили для вкладок в зависимости от темы"""

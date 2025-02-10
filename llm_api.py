@@ -40,8 +40,8 @@ class LLMApi:
 
         # Формируем сообщения для модели
         messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Переведи на {target_lang}:\n\n{text}"}
+            {"role": "system", "content": f"Target language: {target_lang}.\n\n{system_prompt}"},
+            {"role": "user", "content": f"{text}"}
         ]
         
         try:

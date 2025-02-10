@@ -35,6 +35,24 @@ from PyQt5.QtGui import QKeySequence
 import asyncio
 
 
+class TextEditWithCopyButton(QTextEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Создаем кнопку копирования
+        self.copy_button = QToolButton(self)
+        self.copy_button.setIcon(self.style().standardIcon(self.style().SP_DialogSaveButton))
+        self.copy_button.setIconSize(QSize(16, 16))
+        self.copy_button.setFixedSize(28, 28)
+        # Стиль кнопки будет применяться через общую тему
+        
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        # Позиционируем кнопку в правом верхнем углу с учетом полосы прокрутки
+        scrollbar_width = self.verticalScrollBar().width() if self.verticalScrollBar().isVisible() else 0
+        self.copy_button.move(self.width() - self.copy_button.width() - scrollbar_width - 8, 5)
+
+
 class MainWindow(QMainWindow):
     """Главное окно приложения."""
 
@@ -176,9 +194,13 @@ class MainWindow(QMainWindow):
         translated_layout = QVBoxLayout(translated_group)
         translated_layout.setContentsMargins(8, 8, 8, 8)
 
-        self.translated_text = QTextEdit(self)
+        # Создаем текстовое поле с кнопкой копирования
+        self.translated_text = TextEditWithCopyButton(self)
         self.apply_theme()
         self.translated_text.setReadOnly(True)  # Делаем поле только для чтения
+        self.translated_text.copy_button.setToolTip("Копировать перевод")
+        self.translated_text.copy_button.clicked.connect(self.copy_translation)
+        
         translated_layout.addWidget(self.translated_text)
         texts_layout.addWidget(translated_group)
 
@@ -310,7 +332,7 @@ class MainWindow(QMainWindow):
         try:
             llm_api = LLMApi(model_config, self.settings_manager)
             translated = await llm_api.translate(text, target_lang)
-            self.translated_text.setPlainText(translated)
+            self.translated_text.setText(translated)
         finally:
             self.progress_bar.hide()
 
@@ -532,4 +554,12 @@ class MainWindow(QMainWindow):
         """Отменяет текущий процесс перевода."""
         if self.current_translation_task and not self.current_translation_task.done():
             self.current_translation_task.cancel()
+
+    def copy_translation(self):
+        """Копирует переведенный текст в буфер обмена."""
+        text = self.translated_text.toPlainText()
+        if text:
+            clipboard = QApplication.clipboard()
+            clipboard.setText(text)
+            self.hide()  # Скрываем главное окно после копирования
 
