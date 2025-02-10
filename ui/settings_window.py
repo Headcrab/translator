@@ -36,8 +36,21 @@ class SettingsWindow(QDialog):
         self.settings_manager = SettingsManager()
         self.layout = QFormLayout()  # Инициализируем QFormLayout для работы с addRow
         
-        # Восстановление геометрии
+        # Устанавливаем фиксированные размеры окна
+        self.setMinimumWidth(400)  # Увеличиваем минимальную ширину
+        self.setMinimumHeight(600)  # Устанавливаем минимальную высоту
+        
+        # Восстановление геометрии или установка по умолчанию
         x, y, w, h = self.settings_manager.get_settings_window_geometry()
+        w = max(w, 400)  # Убеждаемся, что ширина не меньше минимальной
+        h = max(h, 600)  # Убеждаемся, что высота не меньше минимальной
+        
+        # Центрируем окно относительно родителя
+        if parent:
+            parent_center = parent.geometry().center()
+            x = parent_center.x() - w // 2
+            y = parent_center.y() - h // 2
+        
         self.setGeometry(x, y, w, h)
         
         self.setWindowTitle("Настройки")
@@ -219,9 +232,16 @@ class SettingsWindow(QDialog):
         # Список языков
         self.languages_list = QListWidget()
         self.languages_list.setMaximumHeight(150)
-        available_languages, _ = self.settings_manager.get_languages()
+        available_languages, current_language = self.settings_manager.get_languages()
         self.languages_list.addItems(available_languages)
         self.languages_list.itemClicked.connect(lambda item: self.language_edit.setText(item.text()))
+        
+        # Выделяем текущий язык
+        for i in range(self.languages_list.count()):
+            if self.languages_list.item(i).text() == current_language:
+                self.languages_list.setCurrentRow(i)
+                break
+
         languages_layout.addWidget(self.languages_list)
 
         # Создаем горизонтальный layout для поля ввода и кнопок
@@ -282,6 +302,15 @@ class SettingsWindow(QDialog):
         self.models_list.setMaximumHeight(150)
         self.models_list.itemDoubleClicked.connect(self.edit_model)
         models_layout.addWidget(self.models_list)
+        
+        # Выделяем текущую модель
+        available_models, current_model = self.settings_manager.get_models()
+        for model in available_models:
+            display_name = model["name"]
+            self.models_list.addItem(display_name)
+            
+            if display_name == current_model["name"]:
+                self.models_list.setCurrentRow(self.models_list.count() - 1)
 
         # Создаем горизонтальный layout для кнопок управления моделями
         models_input_layout = QHBoxLayout()
@@ -335,6 +364,14 @@ class SettingsWindow(QDialog):
         self.prompts_list.setMaximumHeight(150)
         self.prompts_list.itemDoubleClicked.connect(self.edit_prompt)
         prompts_layout.addWidget(self.prompts_list)
+        
+        # Выделяем текущий промпт
+        available_prompts, current_prompt = self.settings_manager.get_prompts()
+        for prompt in available_prompts:
+            self.prompts_list.addItem(prompt["name"])
+            
+            if prompt["name"] == current_prompt["name"]:
+                self.prompts_list.setCurrentRow(self.prompts_list.count() - 1)
 
         # Создаем горизонтальный layout для кнопок управления промптами
         prompts_input_layout = QHBoxLayout()
@@ -472,23 +509,37 @@ class SettingsWindow(QDialog):
         self.theme_combo.setCurrentIndex(theme_index)
 
         # Загрузка списка языков
-        available_languages, _ = self.settings_manager.get_languages()
+        available_languages, current_language = self.settings_manager.get_languages()
         self.languages_list.clear()
         self.languages_list.addItems(available_languages)
         self.language_edit.setText("")
+        
+        # Выделяем текущий язык
+        for i in range(self.languages_list.count()):
+            if self.languages_list.item(i).text() == current_language:
+                self.languages_list.setCurrentRow(i)
+                break
 
         # Загрузка списка моделей
-        available_models, _ = self.settings_manager.get_models()
+        available_models, current_model = self.settings_manager.get_models()
         self.models_list.clear()
         for model in available_models:
             display_name = model["name"]
             self.models_list.addItem(display_name)
+            
+            # Выделяем текущую модель
+            if display_name == current_model["name"]:
+                self.models_list.setCurrentRow(self.models_list.count() - 1)
 
         # Загрузка списка промптов
-        available_prompts, _ = self.settings_manager.get_prompts()
+        available_prompts, current_prompt = self.settings_manager.get_prompts()
         self.prompts_list.clear()
         for prompt in available_prompts:
             self.prompts_list.addItem(prompt["name"])
+            
+            # Выделяем текущий промпт
+            if prompt["name"] == current_prompt["name"]:
+                self.prompts_list.setCurrentRow(self.prompts_list.count() - 1)
 
         # Загрузка настроек шрифта
         font_settings = self.settings_manager.get_font_settings()

@@ -1,9 +1,9 @@
 {
     "window": {
-        "x": 531,
-        "y": 242,
-        "width": 1233,
-        "height": 738
+        "x": 757,
+        "y": 233,
+        "width": 1098,
+        "height": 722
     },
     "settings_window": {
         "x": 150,
@@ -16,11 +16,11 @@
             "Русский",
             "Английский",
             "Казахский",
+            "Эсперанто",
+            "Морзе",
             "Возвышенный, архаичный стиль русского",
             "Русский матерный",
             "Только смайлики вместо слов",
-            "Эсперанто",
-            "Морзе",
             "Синдарин"
         ],
         "current": "Русский"
@@ -134,19 +134,15 @@
         "available": [
             {
                 "name": "Базовый",
-                "text": "Переведи следующий текст на указанный язык, сохраняя стиль и тон оригинала."
+                "text": "You are a professional translator. Translate the text accurately and competently into {language}. Preserve formatting and terminology. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
             },
             {
                 "name": "Формальный",
-                "text": "Переведи следующий текст на указанный язык, используя формальный стиль и деловой тон."
+                "text": "Переведи следующий текст на указанный язык, используя формальный стиль и деловой тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
             },
             {
                 "name": "Разговорный",
-                "text": "Переведи следующий текст на указанный язык, используя разговорный стиль и неформальный тон."
-            },
-            {
-                "name": "Оригинал",
-                "text": "You are a professional translator. Translate the text accurately and competently into {language}. Preserve formatting and terminology. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
+                "text": "Переведи следующий текст на указанный язык, используя разговорный стиль и неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
             },
             {
                 "name": "Архитектор",
@@ -176,9 +172,9 @@
         "size": 13
     },
     "settings_window_geometry": [
-        953,
-        465,
-        400,
-        571
+        770,
+        173,
+        578,
+        768
     ]
 }

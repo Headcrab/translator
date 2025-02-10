@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QMessageBox,
 )
-from PyQt5.QtCore import Qt
+# from PyQt5.QtCore import Qt
 from .styles import get_style
 
 

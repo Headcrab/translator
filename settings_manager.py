@@ -25,8 +25,8 @@ class SettingsManager:
             "settings_window": {
                 "x": 150,
                 "y": 150,
-                "width": 600,
-                "height": 800,
+                "width": 800,
+                "height": 600,
             },
             "languages": {
                 "available": ["Русский", "English", "Deutsch", "Français", "Español"],
