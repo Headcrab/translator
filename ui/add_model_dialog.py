@@ -22,6 +22,9 @@ from typing import Dict, Optional
 from providers.llm_provider_factory import LLMProviderFactory
 import asyncio
 import os
+# убрать предупреждение линтера
+import ui.resources_rc  # noqa: F401  # Импорт скомпилированных ресурсов
+
 
 
 class AddModelDialog(QDialog):
