@@ -22,29 +22,72 @@ class SettingsManager:
         """Загружает настройки из файла. Если файл не существует, создает его с дефолтными настройками."""
         default_settings = {
             "window": {"x": 100, "y": 100, "width": 800, "height": 600},
-            "hotkey": {"modifiers": ["win"], "key": "C"},
-            "behavior": {"start_minimized": False, "minimize_to_tray_on_close": True},
-            "languages": {"available": ["en", "ru", "kk"], "current": "ru"},
+            "settings_window": {
+                "x": 150,
+                "y": 150,
+                "width": 600,
+                "height": 800,
+            },
+            "languages": {
+                "available": ["Русский", "English", "Deutsch", "Français", "Español"],
+                "current": "English"
+            },
             "models": {
                 "available": [],
-                "current": None,
-                "system_prompt": "Ты профессиональный переводчик..."
+                "current": None
             },
-            "theme": {"mode": "system"},  # Возможные значения: "light", "dark", "system"
-            "appearance": {  # Переносим настройки шрифта в отдельную секцию
-                "font_family": "Arial",
-                "font_size": 12
+            "prompts": {
+                "available": [
+                    {
+                        "name": "Базовый",
+                        "text": "Переведи следующий текст на указанный язык, сохраняя стиль и тон оригинала."
+                    },
+                    {
+                        "name": "Формальный",
+                        "text": "Переведи следующий текст на указанный язык, используя формальный стиль и деловой тон."
+                    },
+                    {
+                        "name": "Разговорный",
+                        "text": "Переведи следующий текст на указанный язык, используя разговорный стиль и неформальный тон."
+                    }
+                ],
+                "current": None
+            },
+            "hotkey": {
+                "modifiers": ["ctrl", "shift"],
+                "key": "T"
+            },
+            "behavior": {
+                "start_minimized": False,
+                "minimize_to_tray": True
+            },
+            "theme": "system",
+            "font": {
+                "family": "Arial",
+                "size": 12
             }
         }
 
         try:
             if os.path.exists(self.settings_file):
                 with open(self.settings_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    loaded_settings = json.load(f)
+                    # Обновляем дефолтные настройки загруженными
+                    self._update_dict_recursively(default_settings, loaded_settings)
+                    return default_settings
             return default_settings
         except Exception as e:
             print(f"Ошибка при загрузке настроек: {e}")
             return default_settings
+
+    def _update_dict_recursively(self, target, source):
+        """Рекурсивно обновляет словарь, сохраняя структуру и дефолтные значения."""
+        for key, value in source.items():
+            if key in target:
+                if isinstance(value, dict) and isinstance(target[key], dict):
+                    self._update_dict_recursively(target[key], value)
+                else:
+                    target[key] = value
 
     def save_settings(self):
         """Сохраняет текущие настройки в файл."""
@@ -320,10 +363,10 @@ class SettingsManager:
 
     def get_font_settings(self):
         """Получает настройки шрифта."""
-        appearance = self.settings.get("appearance", {})
+        appearance = self.settings.get("font", {})
         return {
-            "font_family": appearance.get("font_family", "Arial"),
-            "font_size": int(appearance.get("font_size", 12))
+            "font_family": appearance.get("family", "Arial"),
+            "font_size": int(appearance.get("size", 12))
         }
 
     def save_font_settings(self, font_family, font_size):
@@ -334,12 +377,73 @@ class SettingsManager:
             except (ValueError, TypeError):
                 font_size = 12
             
-        if "appearance" not in self.settings:
-            self.settings["appearance"] = {}
+        if "font" not in self.settings:
+            self.settings["font"] = {}
         
-        self.settings["appearance"].update({
-            "font_family": font_family,
-            "font_size": font_size
+        self.settings["font"].update({
+            "family": font_family,
+            "size": font_size
         })
         
         self.save_settings()
+
+    def get_prompts(self):
+        """Возвращает список доступных промптов и текущий промпт."""
+        return (
+            self.settings["prompts"]["available"],
+            self.settings["prompts"]["current"]
+        )
+
+    def get_prompt_info(self, name=None):
+        """Возвращает информацию о промпте по имени."""
+        if not name and self.settings["prompts"]["current"]:
+            return self.settings["prompts"]["current"]
+            
+        for prompt in self.settings["prompts"]["available"]:
+            if prompt["name"] == name:
+                return prompt
+        return None
+
+    def add_prompt(self, name, text):
+        """Добавляет новый системный промпт."""
+        prompt = {"name": name, "text": text}
+        self.settings["prompts"]["available"].append(prompt)
+        if not self.settings["prompts"]["current"]:
+            self.settings["prompts"]["current"] = prompt
+        self.save_settings()
+
+    def edit_prompt(self, old_name, new_name, text):
+        """Редактирует существующий системный промпт."""
+        for prompt in self.settings["prompts"]["available"]:
+            if prompt["name"] == old_name:
+                prompt["name"] = new_name
+                prompt["text"] = text
+                if self.settings["prompts"]["current"] and \
+                   self.settings["prompts"]["current"]["name"] == old_name:
+                    self.settings["prompts"]["current"] = prompt
+                break
+        self.save_settings()
+
+    def delete_prompt(self, name):
+        """Удаляет системный промпт."""
+        self.settings["prompts"]["available"] = [
+            p for p in self.settings["prompts"]["available"] 
+            if p["name"] != name
+        ]
+        
+        if self.settings["prompts"]["current"] and \
+           self.settings["prompts"]["current"]["name"] == name:
+            if self.settings["prompts"]["available"]:
+                self.settings["prompts"]["current"] = self.settings["prompts"]["available"][0]
+            else:
+                self.settings["prompts"]["current"] = None
+        
+        self.save_settings()
+
+    def set_current_prompt(self, name):
+        """Устанавливает текущий системный промпт."""
+        for prompt in self.settings["prompts"]["available"]:
+            if prompt["name"] == name:
+                self.settings["prompts"]["current"] = prompt
+                self.save_settings()
+                break

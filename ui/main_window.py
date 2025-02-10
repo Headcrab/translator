@@ -113,6 +113,14 @@ class MainWindow(QMainWindow):
         self.update_model_combo()
         self.model_combo.currentTextChanged.connect(self.on_model_changed)
 
+        # Дропбокс выбора системного промпта
+        prompt_label = QLabel("Промпт:", self)
+        self.apply_theme()
+        self.prompt_combo = QComboBox(self)
+        self.prompt_combo.setMinimumWidth(150)
+        self.update_prompt_combo()
+        self.prompt_combo.currentTextChanged.connect(self.on_prompt_changed)
+
         # Восстанавливаем блок создания кнопки настроек
         # Кнопка для открытия окна настроек
         settings_button = QToolButton(self)
@@ -131,6 +139,8 @@ class MainWindow(QMainWindow):
         top_layout.addWidget(self.language_combo)
         top_layout.addWidget(model_label)
         top_layout.addWidget(self.model_combo)
+        top_layout.addWidget(prompt_label)
+        top_layout.addWidget(self.prompt_combo)
         top_layout.addStretch()  # Растяжка перед кнопкой настроек
         top_layout.addWidget(settings_button)
 
@@ -212,6 +222,16 @@ class MainWindow(QMainWindow):
         if current_model:
             # Устанавливаем по имени модели
             self.model_combo.setCurrentText(current_model["name"])
+
+    def update_prompt_combo(self):
+        """Обновляет список системных промптов в выпадающем меню."""
+        self.prompt_combo.clear()
+        prompts, current_prompt = self.settings_manager.get_prompts()
+        for prompt in prompts:
+            self.prompt_combo.addItem(prompt["name"])
+        
+        if current_prompt:
+            self.prompt_combo.setCurrentText(current_prompt["name"])
 
     async def _do_translate(self):
         """Выполняет перевод текста."""
@@ -351,6 +371,11 @@ class MainWindow(QMainWindow):
         """Обработчик изменения модели в дропбоксе."""
         if model_name:
             self.settings_manager.set_current_model(model_name)
+
+    def on_prompt_changed(self, prompt_name):
+        """Обработчик изменения системного промпта в дропбоксе."""
+        if prompt_name:
+            self.settings_manager.set_current_prompt(prompt_name)
 
     def show_window(self):
         """Показывает и разворачивает окно приложения."""

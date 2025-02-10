@@ -30,24 +30,25 @@ class LLMApi:
         self.provider = LLMProviderFactory.get_provider(model_info)
         
     async def translate(self, text: str, target_lang: str, streaming_callback=None) -> str:
-        """Выполняет перевод с поддержкой потокового режима."""
-        if not text:
-            return ""
-            
-        system_prompt = self.settings_manager.get_system_prompt()
-        
+        """Переводит текст на указанный язык."""
+        # Получаем текущий системный промпт
+        prompt_info = self.settings_manager.get_prompt_info()
+        if not prompt_info:
+            system_prompt = "Переведи следующий текст на указанный язык, сохраняя стиль и тон оригинала."
+        else:
+            system_prompt = prompt_info["text"]
+
+        # Формируем сообщения для модели
         messages = [
-            {"role": "system", "content": system_prompt.format(language=target_lang)},
-            {"role": "user", "content": text}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Переведи на {target_lang}:\n\n{text}"}
         ]
         
-        if not self.provider:
-            raise RuntimeError("Провайдер не инициализирован")
-            
         try:
-            result = await self.provider.translate(messages, target_lang, streaming_callback)
-            return result if result else ""
+            # Выполняем перевод
+            return await self.provider.translate(messages, target_lang, streaming_callback)
+                
         except Exception as e:
-            print(f"Ошибка перевода: {e}")
-            return "Ошибка перевода"
+            print(f"Translation error: {e}")
+            raise Exception(f"Ошибка перевода: {str(e)}")
 

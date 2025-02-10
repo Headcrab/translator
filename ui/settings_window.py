@@ -24,12 +24,14 @@ from PyQt5.QtCore import Qt
 from settings_manager import SettingsManager
 from .styles import get_style
 from .add_model_dialog import AddModelDialog
+from .add_prompt_dialog import AddPromptDialog
 
 
 class SettingsWindow(QDialog):
     """Окно настроек."""
 
     def __init__(self, parent=None):
+        """Инициализация окна настроек."""
         super().__init__(parent)
         self.settings_manager = SettingsManager()
         self.layout = QFormLayout()  # Инициализируем QFormLayout для работы с addRow
@@ -210,9 +212,9 @@ class SettingsWindow(QDialog):
         languages_layout = QVBoxLayout()
         languages_layout.setSpacing(10)
 
-        languages_label = QLabel("Список доступных языков:")
-        languages_label.setStyleSheet("color: #444; font-weight: bold;")
-        languages_layout.addWidget(languages_label)
+        # languages_label = QLabel("Список доступных языков:")
+        # languages_label.setStyleSheet("color: #444; font-weight: bold;")
+        # languages_layout.addWidget(languages_label)
 
         # Список языков
         self.languages_list = QListWidget()
@@ -271,9 +273,9 @@ class SettingsWindow(QDialog):
         models_layout = QVBoxLayout()
         models_layout.setSpacing(10)
 
-        models_label = QLabel("Список моделей:")
-        models_label.setStyleSheet("color: #444; font-weight: bold;")
-        models_layout.addWidget(models_label)
+        # models_label = QLabel("Список моделей:")
+        # models_label.setStyleSheet("color: #444; font-weight: bold;")
+        # models_layout.addWidget(models_label)
 
         # Список моделей
         self.models_list = QListWidget()
@@ -319,24 +321,59 @@ class SettingsWindow(QDialog):
         models_group.setLayout(models_layout)
         content_layout.addWidget(models_group)
 
-        # Добавляем системный промпт в раздел моделей
-        prompt_group = QGroupBox("Системный промпт")
-        prompt_layout = QVBoxLayout()
-        self.system_prompt_edit = QTextEdit()
-        self.system_prompt_edit.setPlaceholderText("Введите системный промпт для перевода...")
-        self.system_prompt_edit.setMaximumHeight(100)
-        prompt_layout.addWidget(self.system_prompt_edit)
-        prompt_group.setLayout(prompt_layout)
-        content_layout.addWidget(prompt_group)  # Добавляем в general_layout
+        # Группа настроек системных промптов
+        prompts_group = QGroupBox("Системные промпты")
+        prompts_layout = QVBoxLayout()
+        prompts_layout.setSpacing(10)
 
-        # Удаляем старую секцию промпта из system_layout
+        # prompts_label = QLabel("Список промптов:")
+        # prompts_label.setStyleSheet("color: #444; font-weight: bold;")
+        # prompts_layout.addWidget(prompts_label)
+
+        # Список промптов
+        self.prompts_list = QListWidget()
+        self.prompts_list.setMaximumHeight(150)
+        self.prompts_list.itemDoubleClicked.connect(self.edit_prompt)
+        prompts_layout.addWidget(self.prompts_list)
+
+        # Создаем горизонтальный layout для кнопок управления промптами
+        prompts_input_layout = QHBoxLayout()
+        prompts_input_layout.setSpacing(5)
+
+        # Кнопки управления промптами
+        self.add_prompt_btn = QToolButton()
+        self.add_prompt_btn.setIcon(self.style().standardIcon(self.style().SP_FileIcon))
+        self.add_prompt_btn.setToolTip("Добавить промпт")
+        self.add_prompt_btn.setFixedHeight(button_height)
+        self.add_prompt_btn.clicked.connect(self.add_prompt)
+
+        self.edit_prompt_btn = QToolButton()
+        self.edit_prompt_btn.setIcon(self.style().standardIcon(self.style().SP_FileDialogDetailedView))
+        self.edit_prompt_btn.setToolTip("Редактировать промпт")
+        self.edit_prompt_btn.setFixedHeight(button_height)
+        self.edit_prompt_btn.clicked.connect(self.edit_prompt)
+
+        self.delete_prompt_btn = QToolButton()
+        self.delete_prompt_btn.setIcon(self.style().standardIcon(self.style().SP_TrashIcon))
+        self.delete_prompt_btn.setToolTip("Удалить промпт")
+        self.delete_prompt_btn.setFixedHeight(button_height)
+        self.delete_prompt_btn.clicked.connect(self.delete_prompt)
+
+        prompts_input_layout.addStretch()
+        prompts_input_layout.addWidget(self.add_prompt_btn)
+        prompts_input_layout.addWidget(self.edit_prompt_btn)
+        prompts_input_layout.addWidget(self.delete_prompt_btn)
+
+        prompts_layout.addLayout(prompts_input_layout)
+        prompts_group.setLayout(prompts_layout)
+        content_layout.addWidget(prompts_group)
 
         # Распределяем группы по вкладкам
         
         # Вкладка "Общие"
         general_layout.addWidget(languages_group)
         general_layout.addWidget(models_group)
-        general_layout.addWidget(prompt_group)
+        general_layout.addWidget(prompts_group)
         general_layout.addStretch()
         
         # Вкладка "Системные"
@@ -379,6 +416,7 @@ class SettingsWindow(QDialog):
         # Настраиваем обработку клавиш для списков
         self.languages_list.keyPressEvent = lambda event: self.handle_list_key_event(event, self.languages_list)
         self.models_list.keyPressEvent = lambda event: self.handle_list_key_event(event, self.models_list)
+        self.prompts_list.keyPressEvent = lambda event: self.handle_list_key_event(event, self.prompts_list)
 
     def _init_ui_components(self):
         """Инициализация компонентов интерфейса."""
@@ -446,9 +484,11 @@ class SettingsWindow(QDialog):
             display_name = model["name"]
             self.models_list.addItem(display_name)
 
-        # Обновляем загрузку системного промпта
-        system_prompt = self.settings_manager.settings.get("models", {}).get("system_prompt", "")
-        self.system_prompt_edit.setPlainText(system_prompt)
+        # Загрузка списка промптов
+        available_prompts, _ = self.settings_manager.get_prompts()
+        self.prompts_list.clear()
+        for prompt in available_prompts:
+            self.prompts_list.addItem(prompt["name"])
 
         # Загрузка настроек шрифта
         font_settings = self.settings_manager.get_font_settings()
@@ -730,7 +770,7 @@ class SettingsWindow(QDialog):
 
     def handle_list_key_event(self, event: QKeyEvent, list_widget: QListWidget):
         """Обработка нажатий клавиш для списков."""
-        if event.modifiers() == Qt.ControlModifier:
+        if event.modifiers() == Qt.AltModifier:
             current_row = list_widget.currentRow()
             if current_row == -1:  # Нет выбранного элемента
                 return super(QListWidget, list_widget).keyPressEvent(event)
@@ -784,3 +824,87 @@ class SettingsWindow(QDialog):
             # Обновляем список моделей в главном окне
             if self.parent():
                 self.parent().update_model_combo()
+        
+        elif list_widget == self.prompts_list:
+            # Сохраняем порядок промптов
+            available_prompts, _ = self.settings_manager.get_prompts()
+            # Создаем новый список промптов в нужном порядке
+            reordered_prompts = []
+            for name in items:
+                for prompt in available_prompts:
+                    if prompt['name'] == name:
+                        reordered_prompts.append(prompt)
+                        break
+            
+            # Обновляем порядок в settings_manager
+            self.settings_manager.settings['prompts']['available'] = reordered_prompts
+            self.settings_manager.save_settings()
+            
+            # Обновляем список промптов в главном окне
+            if self.parent():
+                self.parent().update_prompt_combo()
+
+    def edit_prompt(self):
+        """Редактирует выбранный системный промпт."""
+        selected = self.prompts_list.currentItem()
+        if selected:
+            # Получаем информацию о текущем промпте
+            prompts, _ = self.settings_manager.get_prompts()
+            current_prompt = None
+            for prompt in prompts:
+                if prompt["name"] == selected.text():
+                    current_prompt = prompt
+                    break
+            
+            if current_prompt:
+                dialog = AddPromptDialog(self, current_prompt)
+                dialog.center_relative_to_parent()
+                dialog.apply_theme()
+                
+                if dialog.exec_() == QDialog.Accepted:
+                    prompt_info = dialog.get_prompt_info()
+                    if prompt_info:
+                        self.settings_manager.edit_prompt(
+                            current_prompt["name"],
+                            prompt_info["name"],
+                            prompt_info["text"]
+                        )
+                        self.load_settings()
+                        # Обновляем список промптов в главном окне
+                        if self.parent():
+                            self.parent().update_prompt_combo()
+
+    def delete_prompt(self):
+        """Удаляет выбранный системный промпт."""
+        selected = self.prompts_list.currentItem()
+        if selected:
+            name = selected.text()
+            reply = QMessageBox.question(
+                self,
+                "Подтверждение",
+                f"Вы уверены, что хотите удалить промпт '{name}'?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+
+            if reply == QMessageBox.Yes:
+                self.settings_manager.delete_prompt(name)
+                self.load_settings()
+                # Обновляем список промптов в главном окне
+                if self.parent():
+                    self.parent().update_prompt_combo()
+
+    def add_prompt(self):
+        """Добавляет новый системный промпт."""
+        dialog = AddPromptDialog(self)
+        dialog.center_relative_to_parent()
+        dialog.apply_theme()
+        
+        if dialog.exec_() == QDialog.Accepted:
+            prompt_info = dialog.get_prompt_info()
+            if prompt_info:
+                self.settings_manager.add_prompt(prompt_info["name"], prompt_info["text"])
+                self.load_settings()
+                # Обновляем список промптов в главном окне
+                if self.parent():
+                    self.parent().update_prompt_combo()
