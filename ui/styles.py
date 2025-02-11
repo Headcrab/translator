@@ -112,7 +112,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-    image: url(qrc:/qt-project.org/styles/commonstyle/images/downarrow-8.png);
+    image: url(:/icons/down_arrow_black.svg);
     width: 12px;
     height: 12px;
 }
@@ -295,7 +295,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-    image: url(qrc:/qt-project.org/styles/commonstyle/images/downarrow-8.png);
+    image: url(:/icons/down_arrow_white.svg);
     width: 12px;
     height: 12px;
 }

@@ -14,8 +14,6 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QDialog,
-    QSystemTrayIcon,
-    QMenu,
 )
 from PyQt5.QtCore import (
     pyqtSignal, 
@@ -33,6 +31,7 @@ from ui.events import UpdateTranslationEvent
 from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtGui import QKeySequence
 import asyncio
+from . import resources_rc  # Добавляем импорт ресурсов
 
 
 class TextEditWithCopyButton(QTextEdit):
@@ -65,6 +64,7 @@ class MainWindow(QMainWindow):
         self.settings_manager = SettingsManager()
 
         self.setWindowTitle("LLM Translator")
+        self.setWindowIcon(QIcon(":/icons/icon.png"))  # Устанавливаем иконку окна
         self.apply_theme()
 
         # Устанавливаем геометрию из настроек
@@ -92,8 +92,6 @@ class MainWindow(QMainWindow):
 
         self.setup_shortcuts()
 
-        self.setup_tray()
-
     def _setup_ui(self):
         """Настройка пользовательского интерфейса."""
         # Создаем верхний виджет для кнопок и комбобоксов
@@ -119,7 +117,8 @@ class MainWindow(QMainWindow):
         self.language_combo = QComboBox(self)
         self.language_combo.setMinimumWidth(120)
         available_languages, current_language = self.settings_manager.get_languages()
-        self.language_combo.addItems(available_languages)
+        for lang in available_languages:
+            self.language_combo.addItem(self.style().standardIcon(self.style().SP_MessageBoxInformation), lang)
         self.language_combo.setCurrentText(current_language)
         self.language_combo.currentTextChanged.connect(self.on_language_changed)
 
@@ -128,7 +127,11 @@ class MainWindow(QMainWindow):
         self.apply_theme()
         self.model_combo = QComboBox(self)
         self.model_combo.setMinimumWidth(150)
-        self.update_model_combo()
+        models, current_model = self.settings_manager.get_models()
+        for model in models:
+            self.model_combo.addItem(self.style().standardIcon(self.style().SP_ComputerIcon), model["name"])
+        if current_model:
+            self.model_combo.setCurrentText(current_model["name"])
         self.model_combo.currentTextChanged.connect(self.on_model_changed)
 
         # Дропбокс выбора системного промпта
@@ -136,7 +139,11 @@ class MainWindow(QMainWindow):
         self.apply_theme()
         self.prompt_combo = QComboBox(self)
         self.prompt_combo.setMinimumWidth(150)
-        self.update_prompt_combo()
+        prompts, current_prompt = self.settings_manager.get_prompts()
+        for prompt in prompts:
+            self.prompt_combo.addItem(self.style().standardIcon(self.style().SP_FileIcon), prompt["name"])
+        if current_prompt:
+            self.prompt_combo.setCurrentText(current_prompt["name"])
         self.prompt_combo.currentTextChanged.connect(self.on_prompt_changed)
 
         # Восстанавливаем блок создания кнопки настроек
@@ -219,7 +226,7 @@ class MainWindow(QMainWindow):
 
         # Создаем кнопку отмены перевода
         self.cancel_button = QToolButton(self)
-        self.cancel_button.setIcon(QIcon("path/to/cancel_icon.png"))  # Укажите путь к иконке отмены
+        self.cancel_button.setIcon(QIcon(":/icons/cancel.svg"))
         self.cancel_button.setIconSize(QSize(20, 20))
         self.cancel_button.setFixedSize(16, 16)
         self.cancel_button.setToolTip("Отменить перевод")
@@ -237,7 +244,7 @@ class MainWindow(QMainWindow):
         self.model_combo.clear()
         models, _ = self.settings_manager.get_models()
         for model in models:
-            self.model_combo.addItem(model["name"])
+            self.model_combo.addItem(self.style().standardIcon(self.style().SP_ComputerIcon), model["name"])
         
         # Получаем текущую модель как объект
         _, current_model = self.settings_manager.get_models()
@@ -250,7 +257,7 @@ class MainWindow(QMainWindow):
         self.prompt_combo.clear()
         prompts, current_prompt = self.settings_manager.get_prompts()
         for prompt in prompts:
-            self.prompt_combo.addItem(prompt["name"])
+            self.prompt_combo.addItem(self.style().standardIcon(self.style().SP_FileIcon), prompt["name"])
         
         if current_prompt:
             self.prompt_combo.setCurrentText(current_prompt["name"])
@@ -400,10 +407,11 @@ class MainWindow(QMainWindow):
             self.settings_manager.set_current_prompt(prompt_name)
 
     def show_window(self):
-        """Показывает и разворачивает окно приложения."""
+        """Показывает и активирует окно приложения"""
         self.show()
         self.setWindowState(self.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
         self.activateWindow()
+        self.raise_()  # Поднимаем окно поверх остальных
 
     def update_translated_text(self, text):
         """Обновляет поле с переведенным текстом."""
@@ -489,28 +497,6 @@ class MainWindow(QMainWindow):
         """Настройка горячих клавиш"""
         hide_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
         hide_shortcut.activated.connect(self.hide)
-
-    def setup_tray(self):
-        """Настройка иконки в системном трее"""
-        self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon("path/to/icon.png"))  # Укажите путь к иконке
-        
-        tray_menu = QMenu()
-        show_action = tray_menu.addAction("Показать")
-        show_action.triggered.connect(self.show)
-        quit_action = tray_menu.addAction("Выход")
-        quit_action.triggered.connect(QApplication.quit)
-        
-        self.tray_icon.setContextMenu(tray_menu)
-        self.tray_icon.show()
-        
-        # Показ окна по двойному клику по иконке
-        self.tray_icon.activated.connect(self.on_tray_icon_activated)
-        
-    def on_tray_icon_activated(self, reason):
-        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
-            self.show()
-            self.activateWindow()
 
     def wheelEvent(self, event):
         """Обработка вращения колеса мыши с зажатым Ctrl для изменения размера шрифта"""

@@ -4,70 +4,81 @@ import threading
 import asyncio
 from PyQt5.QtWidgets import QApplication
 from ui.main_window import MainWindow
-from system_tray import SystemTrayHandler
+from ui.system_tray import SystemTrayHandler
 from hotkeys import register_global_hotkeys
 from settings_manager import SettingsManager
 from qasync import QEventLoop
 import logging
+from PyQt5.QtNetwork import QLocalServer, QLocalSocket
+from PyQt5.QtCore import QObject, pyqtSignal
 
 logging.basicConfig(
     level=logging.ERROR,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-async def main_async():
-    # Создаём экземпляр QApplication
-    app = QApplication(sys.argv)
-    loop = QEventLoop(app)
-    asyncio.set_event_loop(loop)
+class SingleInstanceHandler(QObject):
+    new_instance_started = pyqtSignal()
 
-    # Убедиться в инициализации event loop
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    def __init__(self):
+        super().__init__()
+        self.server = QLocalServer()
+        self.server.newConnection.connect(self._handle_new_connection)
 
-    # Инициализируем главное окно
-    window = MainWindow()
-    window.show()
+    def _handle_new_connection(self):
+        socket = self.server.nextPendingConnection()
+        if socket.waitForReadyRead(1000):
+            self.new_instance_started.emit()
+        socket.disconnectFromServer()
 
-    # Иконка в системном трее
-    tray_handler = SystemTrayHandler(app, window)
-    tray_handler.show()
+    def listen(self, server_name):
+        # Удаляем старый сервер, если он существует
+        QLocalServer.removeServer(server_name)
+        return self.server.listen(server_name)
 
-    # Загрузка настроек
-    settings_manager = SettingsManager()
-    modifiers, key = settings_manager.get_hotkey()
-
-    # Формируем строку хоткея
-    hotkey = "+".join(modifiers) + "+" + key if modifiers else key
-
-    # Регистрация глобальных горячих клавиш в отдельном потоке
-    hotkey_thread = threading.Thread(
-        target=register_global_hotkeys, args=(window, hotkey), daemon=True
-    )
-    hotkey_thread.start()
-
-    # Запускаем фоновый поток с HTTP-запросами (по желанию)
-    # run_background_http_request()
-
-    # Запуск основного цикла
-    with loop:
-        loop.run_forever()
-    return 0
-
+def try_connect_to_running_instance(server_name):
+    socket = QLocalSocket()
+    socket.connectToServer(server_name, QLocalSocket.ReadWrite)
+    if socket.waitForConnected(1000):
+        # Отправляем сигнал существующему экземпляру
+        socket.write(b"show")
+        socket.flush()
+        socket.waitForBytesWritten(1000)
+        socket.disconnectFromServer()
+        return True
+    return False
 
 if __name__ == "__main__":
     try:
+        server_name = "LLM_Translator_Server"
+        
+        # Пробуем подключиться к существующему экземпляру
+        if try_connect_to_running_instance(server_name):
+            sys.exit(0)
+
+        # Создаём экземпляр QApplication
         app = QApplication(sys.argv)
         loop = QEventLoop(app)
         asyncio.set_event_loop(loop)
-        
+
+        # Убедиться в инициализации event loop
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
         with loop:
+            # Инициализируем главное окно
             window = MainWindow()
             window.show()
             
             # Инициализация системного трея
             tray_handler = SystemTrayHandler(app, window)
             tray_handler.show()
+
+            # Создаем обработчик единственного экземпляра
+            single_instance = SingleInstanceHandler()
+            single_instance.new_instance_started.connect(window.show_window)
+            if not single_instance.listen(server_name):
+                print("Failed to start single instance server")
 
             # Регистрация горячих клавиш
             settings_manager = SettingsManager()

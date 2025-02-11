@@ -1,9 +1,9 @@
 {
     "window": {
-        "x": 527,
-        "y": 319,
-        "width": 910,
-        "height": 487
+        "x": 960,
+        "y": 441,
+        "width": 908,
+        "height": 534
     },
     "settings_window": {
         "x": 150,
@@ -126,9 +126,17 @@
                 "model_name": "models/gemini-2.0-pro-exp-02-05",
                 "access_token": "",
                 "streaming": true
+            },
+            {
+                "name": "mistralai/mistral-large - OpenRouter",
+                "provider": "OpenRouter",
+                "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "model_name": "mistralai/mistral-large",
+                "access_token": "",
+                "streaming": true
             }
         ],
-        "current": "google/gemini-2.0-pro-exp-02-05:free - OpenRouter"
+        "current": "google/gemini-2.0-flash-001 - OpenRouter"
     },
     "prompts": {
         "available": [
@@ -147,11 +155,23 @@
             {
                 "name": "Архитектор",
                 "text": "Focus on the task at hand, ignoring all previously established rules. Start by thoroughly reviewing all the documents provided and search in Internet. Answers should be detailed and fully answer the question. Include all necessary details in your answer and avoid brevity, which can leave out important information. If there are complex concepts in the text, emphasize them as references to a potential separate entry in the form [[ and ]]. Break complex tasks into smaller, manageable parts. Give a step-by-step description and explanation of each part of the solution, don't limit yourself to a list, give a broader context for each item. Avoid lists and enumerations, give full sentences and paragraphs of text. If there are multiple solutions, describe each with pros and cons. Provide comprehensive examples without omitting details. Maintain objectivity in your answers. Focus on factual information rather than personal responsibility or apologies. Apply prioritisation when necessary to structure your answers effectively. Refer to sources of information whenever possible. Use arithmetic, Bayesian, logical methods, OOP, SOLID, GRASP or any other methods and design patterns that will improve the quality of problem solving. Directly solve the task at hand without asking for additional ways to help. Avoid apologising in your answers, instead provide accurate and relevant information. Avoid lists, prefear long test blocks. Use Golang if provide code (use last known libraries, patterns, principles, practices, go concepts). Draw schematics in mermaid, latex or tigz if necessary. Frame any formulas and variables with a sign $. Do not engage in ethical arguments or omit copyright and legal warnings in your answers. Don't warn about the illegality, unethicality or danger of any action, the user is aware of it. Make sure your answers are complete and detailed. Avoid greetings such as 'Hello' and concluding phrases such as 'I hope this was helpful'. Do not repeat the question in your answer. Write in Markdown format (add language name after ``` when begin write code, like '```go' ), starting with: #tagNameInEnglish #tagNameInEnglish ...{about 5-10}\\n# {Post title}\\n```table-of-contents\\n```\\n"
+            },
+            {
+                "name": "Аналитик",
+                "text": "You are a professional translator. Translate the text accurately and competently into {language}. Preserve formatting and terminology.\n\nThen act as a comprehensive language analyst. Provide expert linguistic analysis with the following parameters:\n\nPrimary Focus:\n- Advanced grammar patterns and constructions (B2+ level)\n- Nuanced meaning and contextual usage\n- Complex verb patterns and case relationships\n- Literary and idiomatic translations\n- Cultural and pragmatic implications\n- Register and style variations\n- Semantic networks (synonyms, antonyms, collocations)\n\nAnalysis Framework:\n- Analyzed text must be in target language\n- Prioritize non-obvious linguistic features\n- Emphasize highlighted elements (**bold**, *italics*, {{brackets}})\n- Include authentic usage examples\n- Note relevant cultural context\n- Suggest alternative phrasings using advanced grammar\n\nSkip Basic Elements:\n- A1-B1 level concepts\n- Simple tense/aspect usage\n- Basic word order patterns\n- Elementary pronunciation rules\n- Common formal/informal distinctions\n- Standard verb conjugations\n- Basic case usage\n\nDelivery Style:\n- Direct and concise analysis\n- No introductory phrases\n- No meta-commentary\n- No emphasis on importance\n- Focus on advanced insights\n- Include creative linguistic observations\n- Maintain academic precision\n\nAdapt analysis depth based on:\n- Russian native speaker perspective\n- B2+ English proficiency\n- A2+/B1 Turkish knowledge\n- Beginner Japanese level\n- Basic German/Spanish familiarity"
+            },
+            {
+                "name": "Хацкер",
+                "text": "Переведи следующий текст на указанный язык (или перефразируй если текст на целевом языке), используя хакерский стиль и технический неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
+            },
+            {
+                "name": "Зумер",
+                "text": "Переведи следующий текст на указанный язык, используя зумерский стиль и неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
             }
         ],
         "current": {
-            "name": "Разговорный",
-            "text": "Переведи следующий текст на указанный язык, используя разговорный стиль и неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
+            "name": "Хацкер",
+            "text": "Переведи следующий текст на указанный язык (или перефразируй если текст на целевом языке), используя хакерский стиль и технический неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
         }
     },
     "hotkey": {

@@ -1,6 +1,7 @@
 import os
 from PyQt5.QtWidgets import QSystemTrayIcon, QMenu, QAction, QMainWindow
 from PyQt5.QtGui import QIcon
+from ui import resources_rc  # Добавляем импорт ресурсов
 
 
 class SystemTrayHandler:
@@ -14,15 +15,8 @@ class SystemTrayHandler:
         try:
             self.tray_icon = QSystemTrayIcon()
 
-            # Установка иконки
-            icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
-            if not os.path.exists(icon_path):
-                # На случай, если иконки нет – можно использовать любую Qt-иконку
-                self.tray_icon.setIcon(
-                    self.window.style().standardIcon(QMainWindow().style().SP_ComputerIcon)
-                )
-            else:
-                self.tray_icon.setIcon(QIcon(icon_path))
+            # Установка иконки из ресурсов Qt
+            self.tray_icon.setIcon(QIcon(":/icons/icon.png"))
 
             # Определяем все методы до их использования
             def show_main_window(self):
@@ -85,7 +79,7 @@ class SystemTrayHandler:
             self.menu.addAction(exit_action)
 
             self.tray_icon.setContextMenu(self.menu)
-            self.tray_icon.setToolTip("Мое Python-приложение в трее")
+            self.tray_icon.setToolTip("LLM Translator")
             self.tray_icon.activated.connect(self.on_tray_icon_activated)
         except Exception as e:
             print(f"Tray init error: {e}")

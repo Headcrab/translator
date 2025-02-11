@@ -16,13 +16,15 @@ tasks:
     desc: Сборка для текущей платформы с уменьшением размера бинарника
     deps: [install]
     cmds:
-      - pyinstaller --onefile --strip --noconsole --name translator --add-data "settings.json:." main.py
+      - python convert_icon.py
+      - pyinstaller --onefile --strip --noconsole --name translator --icon ui/icons/icon.ico --add-data "settings.json:." --add-data "ui/icons/*:ui/icons" main.py
 
   build-windows:
     desc: Сборка для Windows с минимальным размером (убедитесь, что UPX установлен)
     deps: [install]
     cmds:
-      - pyinstaller --onefile --noconsole --name translator.exe --add-data "settings.json;." --distpath ./dist/windows main.py
+      - python convert_icon.py
+      - pyinstaller --onefile --noconsole --name translator.exe --icon ui/icons/icon.ico --add-data "settings.json;." --add-data "ui/icons/*;ui/icons" --distpath ./dist/windows main.py
 
   build-linux:
     desc: Кросс-компиляция для Linux через Docker с уменьшенным размером (в контейнере можно применять --strip)
@@ -37,7 +39,8 @@ tasks:
     desc: Сборка для MacOS с уменьшением размера бинарника
     deps: [install]
     cmds:
-      - pyinstaller --onefile --strip --noconsole --name translator --add-data "settings.json:." --distpath ./dist/macos main.py
+      - python convert_icon.py
+      - pyinstaller --onefile --strip --noconsole --name translator --icon ui/icons/icon.png --add-data "settings.json:." --add-data "ui/icons/*:ui/icons" --distpath ./dist/macos main.py
 
   clean:
     desc: Очистка артефактов сборки

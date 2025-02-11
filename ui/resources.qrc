@@ -2,5 +2,9 @@
 <RCC version="1.0">
     <qresource prefix="/">
         <file>icons/refresh.svg</file>
+        <file>icons/down_arrow_white.svg</file>
+        <file>icons/down_arrow_black.svg</file>
+        <file>icons/cancel.svg</file>
+        <file>icons/icon.png</file>
     </qresource>
 </RCC> 
