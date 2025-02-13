@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 
 class SettingsManager:
@@ -12,8 +13,9 @@ class SettingsManager:
 
     def __init__(self):
         if not hasattr(self, "initialized"):
+            # Получить путь к файлу настроек через путь запуска программы
             self.settings_file = os.path.join(
-                os.path.dirname(__file__), "settings.json"
+                os.path.dirname(sys.argv[0]), "settings.json"
             )
             self.settings = self._load_settings()
             self.initialized = True

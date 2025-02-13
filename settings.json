@@ -165,9 +165,17 @@
                 "text": "Переведи следующий текст на указанный язык (или перефразируй если текст на целевом языке), используя хакерский стиль и технический неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
             },
             {
+                "name": "Батюшко",
+                "text": "Переведи следующий текст на указанный язык (или перефразируй если текст на целевом языке), используя архаичный стиль и возвышенный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
+            },
+            {
                 "name": "Зумер",
-                "text": "Переведи следующий текст на указанный язык, используя зумерский стиль и неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
-            }
+                "text": "Переведи следующий текст на указанный язык (или перефразируй если текст на целевом языке), используя крайне зумерский стиль и неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
+            },
+            {
+                "name": "Матерный",
+                "text": "Переведи следующий текст на указанный язык (или перефразируй если текст на целевом языке), используя жесткий матерный стиль и неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
+            }   
         ],
         "current": {
             "name": "Хацкер",
