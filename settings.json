@@ -1,7 +1,7 @@
 {
     "window": {
-        "x": 960,
-        "y": 441,
+        "x": 550,
+        "y": 311,
         "width": 908,
         "height": 534
     },
@@ -78,6 +78,7 @@
                 "provider": "Google",
                 "api_endpoint": "",
                 "model_name": "gemini-2.0-flash-exp",
+                "access_token": "",
                 "streaming": true
             },
             {
@@ -134,9 +135,25 @@
                 "model_name": "mistralai/mistral-large",
                 "access_token": "",
                 "streaming": true
+            },
+            {
+                "name": "models/gemini-2.0-flash-exp - Google",
+                "provider": "Google",
+                "api_endpoint": "",
+                "model_name": "models/gemini-2.0-flash-exp",
+                "access_token": "",
+                "streaming": true
+            },
+            {
+                "name": "models/gemini-2.0-flash - Google",
+                "provider": "Google",
+                "api_endpoint": "",
+                "model_name": "models/gemini-2.0-flash",
+                "access_token": "",
+                "streaming": true
             }
         ],
-        "current": "google/gemini-2.0-flash-001 - OpenRouter"
+        "current": "google/gemini-2.0-pro-exp-02-05:free - OpenRouter"
     },
     "prompts": {
         "available": [
@@ -175,11 +192,11 @@
             {
                 "name": "Матерный",
                 "text": "Переведи следующий текст на указанный язык (или перефразируй если текст на целевом языке), используя жесткий матерный стиль и неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
-            }   
+            }
         ],
         "current": {
-            "name": "Хацкер",
-            "text": "Переведи следующий текст на указанный язык (или перефразируй если текст на целевом языке), используя хакерский стиль и технический неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
+            "name": "Формальный",
+            "text": "Переведи следующий текст на указанный язык, используя формальный стиль и деловой тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
         }
     },
     "hotkey": {
@@ -190,7 +207,7 @@
     },
     "behavior": {
         "start_minimized": true,
-        "minimize_to_tray": true
+        "minimize_to_tray_on_close": true
     },
     "theme": {
         "mode": "dark"

@@ -26,13 +26,14 @@ import os
 import ui.resources_rc  # noqa: F401  # Импорт скомпилированных ресурсов
 
 
-
 class AddModelDialog(QDialog):
     """Диалоговое окно для добавления новой модели."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.settings_manager = SettingsManager()
+        self.existing_models = {}  # Словарь для хранения существующих моделей
+        self.all_models = []  # Список всех моделей для текущего провайдера
         
         self.setWindowTitle("Добавить модель")
         
@@ -47,6 +48,11 @@ class AddModelDialog(QDialog):
             "Google",
             "OpenRouter"
         ])
+        
+        # Поле поиска моделей
+        self.search_edit = QLineEdit()
+        self.search_edit.setPlaceholderText("Поиск модели...")
+        self.search_edit.textChanged.connect(self.filter_models)
         
         self.model_name_edit = QComboBox()
         self.model_name_edit.setEditable(True)
@@ -84,6 +90,7 @@ class AddModelDialog(QDialog):
         form_layout.addRow("Название:", self.name_edit)
         form_layout.addRow("Провайдер:", self.provider_combo)
         form_layout.addRow("API Key:", self.api_key_edit)
+        form_layout.addRow("Поиск:", self.search_edit)
         form_layout.addRow("Модель:", model_layout)
         self.api_endpoint_label = QLabel("API endpoint:")
         form_layout.addRow(self.api_endpoint_label, self.api_endpoint_edit)
@@ -106,28 +113,110 @@ class AddModelDialog(QDialog):
         
         self.setLayout(layout)
         
+        # Загружаем существующие модели
+        self.load_existing_models()
+        
         # Инициализация начальных значений
         self.on_provider_changed(self.provider_combo.currentText())
         self.adjustSize()
         self.resize(self.width() + 100, self.height())
         
+    def filter_models(self, search_text: str):
+        """Фильтрует список моделей на основе поискового запроса."""
+        provider = self.provider_combo.currentText()
+        
+        # Сохраняем текущий выбор
+        current_text = self.model_name_edit.currentText()
+        
+        # Очищаем список
+        self.model_name_edit.clear()
+        
+        # Фильтруем и добавляем существующие модели
+        existing_provider_models = [
+            model for model in self.existing_models.values()
+            if model["provider"] == provider and 
+            search_text.lower() in model["model_name"].lower()
+        ]
+        for model in existing_provider_models:
+            self.model_name_edit.addItem(
+                self.style().standardIcon(self.style().SP_DialogApplyButton),
+                model["model_name"],
+                model
+            )
+        
+        # Фильтруем и добавляем новые модели
+        for model in self.all_models:
+            if (search_text.lower() in model["model_name"].lower() and
+                not self.is_model_exists(model["model_name"], provider)):
+                self.model_name_edit.addItem(
+                    self.style().standardIcon(self.style().SP_FileIcon),
+                    model["model_name"],
+                    model
+                )
+        
+        # Восстанавливаем выбор, если возможно
+        if current_text:
+            index = self.model_name_edit.findText(current_text)
+            if index >= 0:
+                self.model_name_edit.setCurrentIndex(index)
+                
+    def load_existing_models(self):
+        """Загружает список существующих моделей."""
+        models, _ = self.settings_manager.get_models()
+        for model in models:
+            key = f"{model['model_name']} - {model['provider']}"
+            self.existing_models[key] = model
+            
+    def is_model_exists(self, model_name: str, provider: str) -> Optional[Dict]:
+        """Проверяет, существует ли модель с таким именем и провайдером."""
+        key = f"{model_name} - {provider}"
+        return self.existing_models.get(key)
+        
     def update_model_name(self, model_name: str):
         """Обновляет название модели на основе выбранного провайдера и имени модели в формате 'model_identifier - Provider'."""
         if not model_name:
             return
+            
         provider = self.provider_combo.currentText()
         model_data = self.model_name_edit.currentData()
+        
         if model_data and isinstance(model_data, dict):
             identifier = model_data.get("model_name", model_name)
         else:
             identifier = model_name.split(" - ")[0] if " - " in model_name else model_name
-        new_name = f"{identifier} - {provider}"
-        self.name_edit.setText(new_name)
+            
+        # Проверяем, существует ли такая модель
+        existing_model = self.is_model_exists(identifier, provider)
+        if existing_model:
+            # Если модель существует, заполняем поля её данными
+            self.name_edit.setText(existing_model["name"])
+            self.api_endpoint_edit.setText(existing_model["api_endpoint"])
+            self.stream_checkbox.setChecked(existing_model.get("streaming", False))
+            if existing_model.get("access_token"):
+                self.api_key_edit.setText(existing_model["access_token"])
+        else:
+            # Если модель новая, генерируем новое имя
+            new_name = f"{identifier} - {provider}"
+            self.name_edit.setText(new_name)
         
     def on_provider_changed(self, provider: str):
         """Обновляет подсказки в зависимости от выбранного провайдера."""
-        # Очищаем список моделей
+        # Очищаем список моделей и сбрасываем поиск
         self.model_name_edit.clear()
+        self.search_edit.clear()
+        self.all_models.clear()
+        
+        # Добавляем существующие модели для текущего провайдера
+        existing_provider_models = [
+            model for model in self.existing_models.values()
+            if model["provider"] == provider
+        ]
+        for model in existing_provider_models:
+            self.model_name_edit.addItem(
+                self.style().standardIcon(self.style().SP_DialogApplyButton),
+                model["model_name"],
+                model
+            )
         
         # Скрываем/показываем поле endpoint в зависимости от провайдера
         is_google = provider == "Google"
@@ -173,12 +262,46 @@ class AddModelDialog(QDialog):
         async def fetch():
             try:
                 models = await self._fetch_models()
+                provider = self.provider_combo.currentText()
                 
-                # Обновляем UI в основном потоке
+                # Сохраняем текущий выбор
+                current_text = self.model_name_edit.currentText()
+                
+                # Очищаем список и сохраняем все модели
                 self.model_name_edit.clear()
+                self.all_models = models
+                
+                # Добавляем существующие модели
+                existing_provider_models = [
+                    model for model in self.existing_models.values()
+                    if model["provider"] == provider
+                ]
+                for model in existing_provider_models:
+                    self.model_name_edit.addItem(
+                        self.style().standardIcon(self.style().SP_DialogApplyButton),
+                        model["model_name"],
+                        model
+                    )
+                
+                # Добавляем новые модели
                 for model in models:
-                    display_name = model["model_name"]
-                    self.model_name_edit.addItem(display_name, model)
+                    # Проверяем, не существует ли уже такая модель
+                    if not self.is_model_exists(model["model_name"], provider):
+                        display_name = model["model_name"]
+                        self.model_name_edit.addItem(
+                            self.style().standardIcon(self.style().SP_FileIcon),
+                            display_name,
+                            model
+                        )
+                
+                # Восстанавливаем выбор, если возможно
+                if current_text:
+                    index = self.model_name_edit.findText(current_text)
+                    if index >= 0:
+                        self.model_name_edit.setCurrentIndex(index)
+                        
+                # Применяем текущий фильтр поиска
+                self.filter_models(self.search_edit.text())
                     
             except Exception as e:
                 QMessageBox.warning(
@@ -218,6 +341,19 @@ class AddModelDialog(QDialog):
                 "Пожалуйста, заполните все обязательные поля"
             )
             return None
+            
+        # Проверяем, существует ли уже такая модель
+        existing_model = self.is_model_exists(model_name, provider)
+        if existing_model:
+            # Если модель существует, обновляем только измененные поля
+            return {
+                "name": existing_model["name"],
+                "provider": provider,
+                "model_name": model_name,
+                "api_endpoint": api_endpoint if provider != "Google" else "",
+                "access_token": api_key if api_key else existing_model.get("access_token", ""),
+                "streaming": self.stream_checkbox.isChecked()
+            }
             
         return {
             "name": name,

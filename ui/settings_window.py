@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QComboBox,
     QPushButton,
-    QTextEdit,
     QMessageBox,
     QListWidget,
     QLineEdit,
