@@ -302,15 +302,6 @@ class SettingsWindow(QDialog):
         self.models_list.itemDoubleClicked.connect(self.edit_model)
         models_layout.addWidget(self.models_list)
         
-        # Выделяем текущую модель
-        available_models, current_model = self.settings_manager.get_models()
-        for model in available_models:
-            display_name = model["name"]
-            self.models_list.addItem(display_name)
-            
-            if display_name == current_model["name"]:
-                self.models_list.setCurrentRow(self.models_list.count() - 1)
-
         # Создаем горизонтальный layout для кнопок управления моделями
         models_input_layout = QHBoxLayout()
         models_input_layout.setSpacing(5)
@@ -522,13 +513,22 @@ class SettingsWindow(QDialog):
         # Загрузка списка моделей
         available_models, current_model = self.settings_manager.get_models()
         self.models_list.clear()
-        for model in available_models:
+        
+        # Получаем текущую модель из главного окна или из настроек
+        current_model_name = None
+        if self.parent():
+            current_model_name = self.parent().model_combo.currentText()
+        elif current_model:
+            current_model_name = current_model["name"]
+        
+        # Добавляем модели в список
+        for i, model in enumerate(available_models):
             display_name = model["name"]
             self.models_list.addItem(display_name)
             
             # Выделяем текущую модель
-            if display_name == current_model["name"]:
-                self.models_list.setCurrentRow(self.models_list.count() - 1)
+            if display_name == current_model_name:
+                self.models_list.setCurrentRow(i)
 
         # Загрузка списка промптов
         available_prompts, current_prompt = self.settings_manager.get_prompts()
@@ -738,10 +738,14 @@ class SettingsWindow(QDialog):
             
             if current_model:
                 dialog = AddModelDialog(self)
+                dialog.center_relative_to_parent()
+                dialog.apply_theme()
+                
                 # Заполняем диалог текущими данными модели
                 dialog.name_edit.setText(current_model['name'])
                 dialog.provider_combo.setCurrentText(current_model['provider'])
                 dialog.api_endpoint_edit.setText(current_model['api_endpoint'])
+                dialog.api_key_edit.setText(current_model.get('access_token', ''))
                 
                 # Добавляем текущую модель в комбобокс и выбираем её
                 dialog.model_name_edit.addItem(current_model['model_name'])
@@ -770,7 +774,7 @@ class SettingsWindow(QDialog):
                             'provider': model_data["provider"],
                             'api_endpoint': model_data["api_endpoint"],
                             'model_name': model_data["model_name"],
-                            'access_token': "",
+                            'access_token': model_data.get("access_token", current_model.get("access_token", "")),
                             'streaming': model_data["streaming"]
                         })
                         

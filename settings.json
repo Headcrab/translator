@@ -1,7 +1,7 @@
 {
     "window": {
-        "x": 550,
-        "y": 311,
+        "x": 539,
+        "y": 173,
         "width": 908,
         "height": 534
     },
@@ -23,7 +23,7 @@
             "Только смайлики вместо слов",
             "Синдарин"
         ],
-        "current": "Русский"
+        "current": "Английский"
     },
     "models": {
         "available": [
@@ -46,7 +46,7 @@
             {
                 "name": "gpt-4o - OpenAI",
                 "provider": "OpenAI",
-                "api_endpoint": "https://api.openai.com/v1",
+                "api_endpoint": "https://api.studio.nebius.ai/v1/",
                 "model_name": "gpt-4o",
                 "access_token": "",
                 "streaming": true
@@ -131,9 +131,9 @@
             {
                 "name": "mistralai/mistral-large - OpenRouter",
                 "provider": "OpenRouter",
-                "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "api_endpoint": "https://api.studio.nebius.ai/v1/",
                 "model_name": "mistralai/mistral-large",
-                "access_token": "",
+                "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IlV6SXJWd1h0dnprLVRvdzlLZWstc0M1akptWXBvX1VaVkxUZlpnMDRlOFUiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJnb29nbGUtb2F1dGgyfDExMjE4MTc3MjMwNzYzOTc5ODUyOSIsInNjb3BlIjoib3BlbmlkIG9mZmxpbmVfYWNjZXNzIiwiaXNzIjoiYXBpX2tleV9pc3N1ZXIiLCJhdWQiOlsiaHR0cHM6Ly9uZWJpdXMtaW5mZXJlbmNlLmV1LmF1dGgwLmNvbS9hcGkvdjIvIl0sImV4cCI6MTg5NTg0OTYwMywidXVpZCI6IjBkOGNlOWJiLWVlNmQtNGYxNy1iNGY4LWVkNzhlMDZmOTA2MCIsIm5hbWUiOiJVbm5hbWVkIGtleSIsImV4cGlyZXNfYXQiOiIyMDMwLTAxLTI4VDE2OjUzOjIzKzAwMDAifQ.JiWs-38jTMi92Ea2VTvIiuM51DbGnbUC41jNKiApeDk",
                 "streaming": true
             },
             {
@@ -150,6 +150,22 @@
                 "api_endpoint": "",
                 "model_name": "models/gemini-2.0-flash",
                 "access_token": "",
+                "streaming": true
+            },
+            {
+                "name": "deepseek-ai/DeepSeek-R1 - Custom",
+                "provider": "Custom",
+                "api_endpoint": "https://api.studio.nebius.ai/v1/",
+                "model_name": "deepseek-ai/DeepSeek-R1",
+                "access_token": "",
+                "streaming": true
+            },
+            {
+                "name": "microsoft/phi-4 - Custom",
+                "provider": "Custom",
+                "api_endpoint": "https://api.studio.nebius.ai/v1/",
+                "model_name": "microsoft/phi-4",
+                "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IlV6SXJWd1h0dnprLVRvdzlLZWstc0M1akptWXBvX1VaVkxUZlpnMDRlOFUiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJnb29nbGUtb2F1dGgyfDExMjE4MTc3MjMwNzYzOTc5ODUyOSIsInNjb3BlIjoib3BlbmlkIG9mZmxpbmVfYWNjZXNzIiwiaXNzIjoiYXBpX2tleV9pc3N1ZXIiLCJhdWQiOlsiaHR0cHM6Ly9uZWJpdXMtaW5mZXJlbmNlLmV1LmF1dGgwLmNvbS9hcGkvdjIvIl0sImV4cCI6MTg5NTg0OTYwMywidXVpZCI6IjBkOGNlOWJiLWVlNmQtNGYxNy1iNGY4LWVkNzhlMDZmOTA2MCIsIm5hbWUiOiJVbm5hbWVkIGtleSIsImV4cGlyZXNfYXQiOiIyMDMwLTAxLTI4VDE2OjUzOjIzKzAwMDAifQ.JiWs-38jTMi92Ea2VTvIiuM51DbGnbUC41jNKiApeDk",
                 "streaming": true
             }
         ],
@@ -195,8 +211,8 @@
             }
         ],
         "current": {
-            "name": "Формальный",
-            "text": "Переведи следующий текст на указанный язык, используя формальный стиль и деловой тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
+            "name": "Аналитик",
+            "text": "You are a professional translator. Translate the text accurately and competently into {language}. Preserve formatting and terminology.\n\nThen act as a comprehensive language analyst. Provide expert linguistic analysis with the following parameters:\n\nPrimary Focus:\n- Advanced grammar patterns and constructions (B2+ level)\n- Nuanced meaning and contextual usage\n- Complex verb patterns and case relationships\n- Literary and idiomatic translations\n- Cultural and pragmatic implications\n- Register and style variations\n- Semantic networks (synonyms, antonyms, collocations)\n\nAnalysis Framework:\n- Analyzed text must be in target language\n- Prioritize non-obvious linguistic features\n- Emphasize highlighted elements (**bold**, *italics*, {{brackets}})\n- Include authentic usage examples\n- Note relevant cultural context\n- Suggest alternative phrasings using advanced grammar\n\nSkip Basic Elements:\n- A1-B1 level concepts\n- Simple tense/aspect usage\n- Basic word order patterns\n- Elementary pronunciation rules\n- Common formal/informal distinctions\n- Standard verb conjugations\n- Basic case usage\n\nDelivery Style:\n- Direct and concise analysis\n- No introductory phrases\n- No meta-commentary\n- No emphasis on importance\n- Focus on advanced insights\n- Include creative linguistic observations\n- Maintain academic precision\n\nAdapt analysis depth based on:\n- Russian native speaker perspective\n- B2+ English proficiency\n- A2+/B1 Turkish knowledge\n- Beginner Japanese level\n- Basic German/Spanish familiarity"
         }
     },
     "hotkey": {

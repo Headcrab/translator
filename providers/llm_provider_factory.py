@@ -4,6 +4,7 @@ from .openai_provider import OpenAIProvider
 from .anthropic_provider import AnthropicProvider
 from .openrouter_provider import OpenRouterProvider
 from .google_provider import GoogleProvider
+from .custom_provider import CustomProvider
 from typing import Dict, Any, List
 import asyncio
 
@@ -31,6 +32,8 @@ class LLMProviderFactory:
             return OpenRouterProvider(model_info)
         elif provider_name == 'google':
             return GoogleProvider(model_info)
+        elif provider_name == 'custom':
+            return CustomProvider(model_info)
         else:
             raise ValueError(f"Неизвестный провайдер: {provider_name}")
 
@@ -73,13 +76,19 @@ class LLMProviderFactory:
                 "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
                 "model_name": "openai/gpt-3.5-turbo",
                 "access_token": api_keys.get("openrouter", "")
+            },
+            "custom": {
+                "provider": "custom",
+                "api_endpoint": "",
+                "model_name": "",
+                "access_token": api_keys.get("custom", "")
             }
         }
         
         # Создаем задачи для асинхронного получения моделей
         tasks = []
         for provider_name, config in providers_config.items():
-            if config["access_token"]:  # Получаем модели только если есть API ключ
+            if config["access_token"] and provider_name != "custom":  # Получаем модели только если есть API ключ и провайдер не Custom
                 provider = LLMProviderFactory.get_provider(config)
                 tasks.append(provider.get_available_models())
         

@@ -46,7 +46,8 @@ class AddModelDialog(QDialog):
             "OpenAI",
             "Anthropic", 
             "Google",
-            "OpenRouter"
+            "OpenRouter",
+            "Custom"
         ])
         
         # Поле поиска моделей
@@ -188,8 +189,7 @@ class AddModelDialog(QDialog):
         # Проверяем, существует ли такая модель
         existing_model = self.is_model_exists(identifier, provider)
         if existing_model:
-            # Если модель существует, заполняем поля её данными
-            self.name_edit.setText(existing_model["name"])
+            # Если модель существует, заполняем поля её данными, но не меняем название
             self.api_endpoint_edit.setText(existing_model["api_endpoint"])
             self.stream_checkbox.setChecked(existing_model.get("streaming", False))
             if existing_model.get("access_token"):
@@ -220,8 +220,13 @@ class AddModelDialog(QDialog):
         
         # Скрываем/показываем поле endpoint в зависимости от провайдера
         is_google = provider == "Google"
+        is_custom = provider == "Custom"
         self.api_endpoint_edit.setVisible(not is_google)
         self.api_endpoint_label.setVisible(not is_google)
+        
+        # Скрываем поле поиска и кнопку обновления для Custom провайдера
+        self.search_edit.setVisible(not is_custom)
+        self.refresh_models_button.setVisible(not is_custom)
         
         if provider == "OpenAI":
             self.api_endpoint_edit.setText("https://api.openai.com/v1")
@@ -235,6 +240,9 @@ class AddModelDialog(QDialog):
         elif provider == "OpenRouter":
             self.api_endpoint_edit.setText("https://openrouter.ai/api/v1/chat/completions")
             self.api_key_edit.setText(os.getenv("OPENROUTER_API_KEY", ""))
+        elif provider == "Custom":
+            self.api_endpoint_edit.setText("")
+            self.api_key_edit.setText("")
         
         # Обновляем название при смене провайдера
         self.update_model_name(self.model_name_edit.currentText())
@@ -320,14 +328,19 @@ class AddModelDialog(QDialog):
         """Возвращает информацию о модели."""
         name = self.name_edit.text().strip()
         provider = self.provider_combo.currentText()
-        model_name = self.model_name_edit.currentText()
         api_endpoint = self.api_endpoint_edit.text().strip()
         api_key = self.api_key_edit.text().strip()
         
-        # Если модель выбрана из списка, извлекаем model_name из данных модели
-        current_data = self.model_name_edit.currentData()
-        if current_data and isinstance(current_data, dict):
-            model_name = current_data["model_name"]
+        # Получаем имя модели
+        if provider == "Custom":
+            # Для Custom провайдера берем значение напрямую из поля ввода
+            model_name = self.model_name_edit.currentText().strip()
+        else:
+            # Для остальных провайдеров используем логику с currentData
+            model_name = self.model_name_edit.currentText()
+            current_data = self.model_name_edit.currentData()
+            if current_data and isinstance(current_data, dict):
+                model_name = current_data["model_name"]
         
         # Проверяем обязательные поля
         required_fields = [name, provider, model_name]
@@ -341,6 +354,17 @@ class AddModelDialog(QDialog):
                 "Пожалуйста, заполните все обязательные поля"
             )
             return None
+            
+        # Для Custom провайдера всегда создаем новую модель
+        if provider == "Custom":
+            return {
+                "name": name,
+                "provider": provider,
+                "model_name": model_name,
+                "api_endpoint": api_endpoint,
+                "access_token": api_key,
+                "streaming": self.stream_checkbox.isChecked()
+            }
             
         # Проверяем, существует ли уже такая модель
         existing_model = self.is_model_exists(model_name, provider)

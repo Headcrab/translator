@@ -31,7 +31,7 @@ from ui.events import UpdateTranslationEvent
 from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtGui import QKeySequence
 import asyncio
-from . import resources_rc  # Добавляем импорт ресурсов
+from . import resources_rc  #noqa: F401
 
 
 class TextEditWithCopyButton(QTextEdit):
@@ -389,8 +389,18 @@ class MainWindow(QMainWindow):
     def open_settings(self):
         """Открывает окно настроек."""
         if self.settings_window.exec_() == QDialog.Accepted:
+            # Сначала получаем выбранную модель из окна настроек
+            selected_item = self.settings_window.models_list.currentItem()
+            selected_model = selected_item.text() if selected_item else None
+            
+            # Затем обновляем настройки
             self.settings_window.load_settings()
             self.apply_font_settings()
+            
+            # И наконец устанавливаем выбранную модель
+            if selected_model:
+                self.model_combo.setCurrentText(selected_model)
+                self.settings_manager.set_current_model(selected_model)
 
     def on_language_changed(self, language):
         """Обработчик изменения языка в дропбоксе."""
