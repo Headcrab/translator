@@ -231,15 +231,18 @@ class SettingsWindow(QDialog):
         # Список языков
         self.languages_list = QListWidget()
         self.languages_list.setMaximumHeight(150)
-        available_languages, current_language = self.settings_manager.get_languages()
+        available_languages, _ = self.settings_manager.get_languages()
         self.languages_list.addItems(available_languages)
         self.languages_list.itemClicked.connect(lambda item: self.language_edit.setText(item.text()))
         
-        # Выделяем текущий язык
-        for i in range(self.languages_list.count()):
-            if self.languages_list.item(i).text() == current_language:
-                self.languages_list.setCurrentRow(i)
-                break
+        # Получаем текущий язык из главного окна
+        if self.parent():
+            current_language = self.parent().language_combo.currentText()
+            # Выделяем текущий язык в списке
+            for i in range(self.languages_list.count()):
+                if self.languages_list.item(i).text() == current_language:
+                    self.languages_list.setCurrentRow(i)
+                    break
 
         languages_layout.addWidget(self.languages_list)
 
@@ -355,13 +358,14 @@ class SettingsWindow(QDialog):
         self.prompts_list.itemDoubleClicked.connect(self.edit_prompt)
         prompts_layout.addWidget(self.prompts_list)
         
-        # Выделяем текущий промпт
-        available_prompts, current_prompt = self.settings_manager.get_prompts()
-        for prompt in available_prompts:
-            self.prompts_list.addItem(prompt["name"])
-            
-            if prompt["name"] == current_prompt["name"]:
-                self.prompts_list.setCurrentRow(self.prompts_list.count() - 1)
+        # Получаем текущий промпт из главного окна
+        if self.parent():
+            current_prompt = self.parent().prompt_combo.currentText()
+            # Выделяем текущий промпт в списке
+            for i in range(self.prompts_list.count()):
+                if self.prompts_list.item(i).text() == current_prompt:
+                    self.prompts_list.setCurrentRow(i)
+                    break
 
         # Создаем горизонтальный layout для кнопок управления промптами
         prompts_input_layout = QHBoxLayout()
@@ -499,46 +503,53 @@ class SettingsWindow(QDialog):
         self.theme_combo.setCurrentIndex(theme_index)
 
         # Загрузка списка языков
-        available_languages, current_language = self.settings_manager.get_languages()
+        available_languages, _ = self.settings_manager.get_languages()
         self.languages_list.clear()
         self.languages_list.addItems(available_languages)
         self.language_edit.setText("")
         
-        # Выделяем текущий язык
-        for i in range(self.languages_list.count()):
-            if self.languages_list.item(i).text() == current_language:
-                self.languages_list.setCurrentRow(i)
-                break
+        # Получаем текущий язык из главного окна
+        if self.parent():
+            current_language = self.parent().language_combo.currentText()
+            # Выделяем текущий язык в списке
+            for i in range(self.languages_list.count()):
+                if self.languages_list.item(i).text() == current_language:
+                    self.languages_list.setCurrentRow(i)
+                    break
 
         # Загрузка списка моделей
-        available_models, current_model = self.settings_manager.get_models()
+        available_models, _ = self.settings_manager.get_models()
         self.models_list.clear()
         
-        # Получаем текущую модель из главного окна или из настроек
-        current_model_name = None
+        # Добавляем модели в список
+        for model in available_models:
+            self.models_list.addItem(model["name"])
+        
+        # Получаем текущую модель из главного окна
         if self.parent():
             current_model_name = self.parent().model_combo.currentText()
-        elif current_model:
-            current_model_name = current_model["name"]
-        
-        # Добавляем модели в список
-        for i, model in enumerate(available_models):
-            display_name = model["name"]
-            self.models_list.addItem(display_name)
-            
-            # Выделяем текущую модель
-            if display_name == current_model_name:
-                self.models_list.setCurrentRow(i)
+            # Выделяем текущую модель в списке
+            for i in range(self.models_list.count()):
+                if self.models_list.item(i).text() == current_model_name:
+                    self.models_list.setCurrentRow(i)
+                    break
 
         # Загрузка списка промптов
-        available_prompts, current_prompt = self.settings_manager.get_prompts()
+        available_prompts, _ = self.settings_manager.get_prompts()
         self.prompts_list.clear()
+        
+        # Добавляем промпты в список
         for prompt in available_prompts:
             self.prompts_list.addItem(prompt["name"])
-            
-            # Выделяем текущий промпт
-            if prompt["name"] == current_prompt["name"]:
-                self.prompts_list.setCurrentRow(self.prompts_list.count() - 1)
+        
+        # Получаем текущий промпт из главного окна
+        if self.parent():
+            current_prompt = self.parent().prompt_combo.currentText()
+            # Выделяем текущий промпт в списке
+            for i in range(self.prompts_list.count()):
+                if self.prompts_list.item(i).text() == current_prompt:
+                    self.prompts_list.setCurrentRow(i)
+                    break
 
         # Загрузка настроек шрифта
         font_settings = self.settings_manager.get_font_settings()
@@ -612,11 +623,46 @@ class SettingsWindow(QDialog):
         if hasattr(parent, 'apply_font_settings'):
             parent.apply_font_settings()
 
+        # Добавляю обновление текущей модели из списка настроек
+        selected_item = self.models_list.currentItem()
+        if selected_item:
+            model_name = selected_item.text()
+            self.settings_manager.set_current_model(model_name)
+            
+            # Обновляем модель в главном окне
+            if self.parent():
+                index = self.parent().model_combo.findText(model_name)
+                if index >= 0:
+                    self.parent().model_combo.setCurrentIndex(index)
+
+        # Добавляю обновление текущего языка из списка
+        selected_lang = self.languages_list.currentItem()
+        if selected_lang:
+            lang_name = selected_lang.text()
+            self.settings_manager.set_current_language(lang_name)
+            
+            # Обновляем язык в главном окне
+            if self.parent():
+                index = self.parent().language_combo.findText(lang_name)
+                if index >= 0:
+                    self.parent().language_combo.setCurrentIndex(index)
+
+        # Добавляю обновление текущего промпта из списка
+        selected_prompt = self.prompts_list.currentItem()
+        if selected_prompt:
+            prompt_name = selected_prompt.text()
+            self.settings_manager.set_current_prompt(prompt_name)
+            
+            # Обновляем промпт в главном окне
+            if self.parent():
+                index = self.parent().prompt_combo.findText(prompt_name)
+                if index >= 0:
+                    self.parent().prompt_combo.setCurrentIndex(index)
+
         self.hide()
         
-        # Обновляем список моделей в главном окне через родительское окно
+        # Обновляем тему в главном окне
         if self.parent():
-            self.parent().update_model_combo()
             self.parent().apply_theme()
 
     def add_model(self):

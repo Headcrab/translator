@@ -242,15 +242,17 @@ class MainWindow(QMainWindow):
     def update_model_combo(self):
         """Обновляет список моделей в выпадающем меню."""
         self.model_combo.clear()
-        models, _ = self.settings_manager.get_models()
+        models, current_model = self.settings_manager.get_models()
+        
+        # Добавляем модели в список
         for model in models:
             self.model_combo.addItem(self.style().standardIcon(self.style().SP_ComputerIcon), model["name"])
         
-        # Получаем текущую модель как объект
-        _, current_model = self.settings_manager.get_models()
+        # Устанавливаем текущую модель
         if current_model:
-            # Устанавливаем по имени модели
-            self.model_combo.setCurrentText(current_model["name"])
+            index = self.model_combo.findText(current_model["name"])
+            if index >= 0:
+                self.model_combo.setCurrentIndex(index)
 
     def update_prompt_combo(self):
         """Обновляет список системных промптов в выпадающем меню."""
@@ -388,19 +390,21 @@ class MainWindow(QMainWindow):
 
     def open_settings(self):
         """Открывает окно настроек."""
+        # Загружаем настройки перед показом окна
+        self.settings_window.load_settings()
+        
         if self.settings_window.exec_() == QDialog.Accepted:
-            # Сначала получаем выбранную модель из окна настроек
-            selected_item = self.settings_window.models_list.currentItem()
-            selected_model = selected_item.text() if selected_item else None
-            
-            # Затем обновляем настройки
-            self.settings_window.load_settings()
             self.apply_font_settings()
             
-            # И наконец устанавливаем выбранную модель
-            if selected_model:
-                self.model_combo.setCurrentText(selected_model)
-                self.settings_manager.set_current_model(selected_model)
+            # Получаем выбранную в настройках модель
+            selected_item = self.settings_window.models_list.currentItem()
+            if selected_item:
+                model_name = selected_item.text()
+                # Обновляем модель в комбобоксе
+                index = self.model_combo.findText(model_name)
+                if index >= 0:
+                    self.model_combo.setCurrentIndex(index)
+                    self.settings_manager.set_current_model(model_name)
 
     def on_language_changed(self, language):
         """Обработчик изменения языка в дропбоксе."""
