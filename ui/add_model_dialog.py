@@ -220,13 +220,8 @@ class AddModelDialog(QDialog):
         
         # Скрываем/показываем поле endpoint в зависимости от провайдера
         is_google = provider == "Google"
-        is_custom = provider == "Custom"
         self.api_endpoint_edit.setVisible(not is_google)
         self.api_endpoint_label.setVisible(not is_google)
-        
-        # Скрываем поле поиска и кнопку обновления для Custom провайдера
-        self.search_edit.setVisible(not is_custom)
-        self.refresh_models_button.setVisible(not is_custom)
         
         if provider == "OpenAI":
             self.api_endpoint_edit.setText("https://api.openai.com/v1")
@@ -255,6 +250,35 @@ class AddModelDialog(QDialog):
         if not api_key:
             return []
             
+        # Для Custom провайдера создаем экземпляр напрямую
+        if provider == "custom":
+            endpoint = self.api_endpoint_edit.text().strip()
+            if not endpoint:
+                raise Exception("Для Custom провайдера необходимо указать API endpoint")
+                
+            from providers.custom_provider import CustomProvider
+            
+            model_info = {
+                "provider": provider,
+                "api_endpoint": endpoint,
+                "access_token": api_key,
+                "model_name": "test"  # Временное значение для инициализации
+            }
+            
+            custom_provider = CustomProvider(model_info)
+            models = await custom_provider.get_available_models()
+            
+            # Преобразуем формат моделей к общему виду
+            return [
+                {
+                    "id": model.get("id", ""),
+                    "name": model.get("name", model.get("id", "")),
+                    "model_name": model.get("id", ""),
+                }
+                for model in models
+            ]
+            
+        # Для остальных провайдеров используем фабрику
         api_keys = {provider: api_key}
         models = await LLMProviderFactory.get_all_available_models(api_keys)
         

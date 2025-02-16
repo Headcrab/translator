@@ -157,13 +157,63 @@ class CustomProvider(BaseProvider):
         
     async def get_available_models(self) -> List[Dict[str, Any]]:
         """
-        Возвращает пустой список моделей, так как для кастомного провайдера
-        модели задаются вручную.
+        Получает список доступных моделей от кастомного API.
         
         Returns:
-            List[Dict[str, Any]]: Пустой список моделей
+            List[Dict[str, Any]]: Список моделей в формате:
+            [{"id": "model_id", "name": "Model Name"}]
         """
-        return []
+        # Получаем базовый URL API, убирая /chat/completions
+        base_url = self.model_info["api_endpoint"].replace("/chat/completions", "")
+        models_url = f"{base_url}/models"
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                headers = await self._get_headers()
+                async with session.get(models_url, headers=headers) as response:
+                    if response.status != 200:
+                        logger.error(f"Не удалось получить список моделей. Статус: {response.status}")
+                        return []
+                        
+                    data = await response.json()
+                    
+                    # Пробуем разные форматы ответа
+                    if isinstance(data, dict):
+                        # Формат OpenAI
+                        if "data" in data:
+                            return [
+                                {
+                                    "id": model["id"],
+                                    "name": model.get("name", model["id"])
+                                }
+                                for model in data["data"]
+                            ]
+                        # Другие возможные форматы
+                        models = data.get("models", [])
+                        if models:
+                            return [
+                                {
+                                    "id": model.get("id", model.get("model_id", "")),
+                                    "name": model.get("name", model.get("model_name", model.get("id", "")))
+                                }
+                                for model in models
+                            ]
+                    elif isinstance(data, list):
+                        # Список моделей напрямую
+                        return [
+                            {
+                                "id": model.get("id", model.get("model_id", "")),
+                                "name": model.get("name", model.get("model_name", model.get("id", "")))
+                            }
+                            for model in data
+                        ]
+                    
+                    logger.error(f"Неизвестный формат ответа API: {data}")
+                    return []
+                    
+        except Exception as e:
+            logger.error(f"Ошибка при получении списка моделей: {str(e)}")
+            return []
         
     async def translate(self, messages, target_lang, streaming_callback=None) -> str:
         """
@@ -172,8 +222,8 @@ class CustomProvider(BaseProvider):
         
         Args:
             messages: Список сообщений, например, [
-                 {"role": "system", "content": "Target language: Русский.\n\n<system prompt>"},
-                 {"role": "user", "content": "API endpoint и API key"}
+                {"role": "system", "content": "Target language: Русский.\n\n<system prompt>"},
+                {"role": "user", "content": "API endpoint и API key"}
             ]
             target_lang: Целевой язык (используется для обратной совместимости, но не влияет на формирование сообщения)
             streaming_callback: Опциональный callback для обработки потокового вывода

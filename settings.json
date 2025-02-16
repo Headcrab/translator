@@ -23,7 +23,7 @@
             "Только смайлики вместо слов",
             "Синдарин"
         ],
-        "current": "Казахский"
+        "current": "Английский"
     },
     "models": {
         "available": [
@@ -167,9 +167,17 @@
                 "model_name": "microsoft/phi-4",
                 "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IlV6SXJWd1h0dnprLVRvdzlLZWstc0M1akptWXBvX1VaVkxUZlpnMDRlOFUiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJnb29nbGUtb2F1dGgyfDExMjE4MTc3MjMwNzYzOTc5ODUyOSIsInNjb3BlIjoib3BlbmlkIG9mZmxpbmVfYWNjZXNzIiwiaXNzIjoiYXBpX2tleV9pc3N1ZXIiLCJhdWQiOlsiaHR0cHM6Ly9uZWJpdXMtaW5mZXJlbmNlLmV1LmF1dGgwLmNvbS9hcGkvdjIvIl0sImV4cCI6MTg5NTg0OTYwMywidXVpZCI6IjBkOGNlOWJiLWVlNmQtNGYxNy1iNGY4LWVkNzhlMDZmOTA2MCIsIm5hbWUiOiJVbm5hbWVkIGtleSIsImV4cGlyZXNfYXQiOiIyMDMwLTAxLTI4VDE2OjUzOjIzKzAwMDAifQ.JiWs-38jTMi92Ea2VTvIiuM51DbGnbUC41jNKiApeDk",
                 "streaming": true
+            },
+            {
+                "name": "nvidia/Llama-3.1-Nemotron-70B-Instruct-HF - Custom",
+                "provider": "Custom",
+                "api_endpoint": "https://api.studio.nebius.ai/v1/",
+                "model_name": "nvidia/Llama-3.1-Nemotron-70B-Instruct-HF",
+                "access_token": "",
+                "streaming": true
             }
         ],
-        "current": "google/gemini-2.0-pro-exp-02-05:free - OpenRouter"
+        "current": "microsoft/phi-4 - Custom"
     },
     "prompts": {
         "available": [
@@ -211,8 +219,8 @@
             }
         ],
         "current": {
-            "name": "Хацкер",
-            "text": "Переведи следующий текст на указанный язык (или перефразируй если текст на целевом языке), используя хакерский стиль и технический неформальный тон. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
+            "name": "Базовый",
+            "text": "You are a professional translator. Translate the text accurately and competently into {language}. Preserve formatting and terminology. Do not add any other comments, introductions or conclusions, TRANSLATED TEXT ONLY!"
         }
     },
     "hotkey": {
