@@ -4,6 +4,7 @@ from .base_provider import BaseProvider
 import aiohttp
 import json
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,25 @@ class CustomProvider(BaseProvider):
         Args:
             model_info: Словарь с информацией о модели
         """
+        # Сначала получаем токен из переменной окружения, если она указана
+        access_token = model_info.get("access_token")
+        print(f"\n=== Access token env name: {access_token}")
+        
+        if access_token:
+            env_value = os.getenv(access_token)
+            print(f"=== Access token env value exists: {env_value is not None}")
+            print(f"=== Access token env value length: {len(env_value) if env_value else 0}")
+            
+            if env_value:
+                # Если значение получено из переменной окружения, используем его
+                model_info["access_token"] = env_value
+                print(f"=== Access token set from env: {env_value[:5]}...")
+            else:
+                print(f"=== WARNING: Environment variable {access_token} is not set or empty")
+        
+        # Теперь вызываем родительский конструктор с обновленным model_info
         super().__init__(model_info)
+        
         # Добавляем /chat/completions к URL если его нет
         api_endpoint = self.model_info.get("api_endpoint", "").rstrip("/")
         if not api_endpoint.endswith("/chat/completions"):
@@ -92,21 +111,26 @@ class CustomProvider(BaseProvider):
         }
         
         token = self.model_info.get('access_token')
+        print(f"\n=== CustomProvider token value: {token[:10]}..." if token else "[MISSING]")
+        
         if token:
-            # Пробуем разные варианты заголовков авторизации
+            # Пробуем разные варианты
             auth_headers = []
             
             # Если токен уже содержит тип, используем как есть
-            if any(token.startswith(prefix) for prefix in ['Bearer ', 'Basic ', 'Token ']):
+            if any(token.startswith(prefix) for prefix in ['Bearer ', 'Basic ', 'Token ', 'Api-Key ']):
                 auth_headers.append(token)
+                print("=== Token already has prefix")
             else:
                 # Добавляем разные варианты префиксов
                 auth_headers.extend([
                     f"Bearer {token}",
                     token,  # Без префикса
                     f"Token {token}",
-                    f"Basic {token}"
+                    f"Basic {token}",
+                    f"Api-Key {token}"
                 ])
+                print("=== Added different auth header variants")
             
             # Пробуем разные имена заголовков
             auth_header_names = [
@@ -120,17 +144,19 @@ class CustomProvider(BaseProvider):
             for header_name in auth_header_names:
                 for auth_value in auth_headers:
                     headers[header_name] = auth_value
+                    print(f"=== Trying header combination: {header_name}: {auth_value[:10]}...")
                     
                     # Пробуем сделать тестовый запрос с текущими заголовками
                     try:
                         await self._detect_api_version(headers)
-                        logger.info(f"Успешная авторизация с заголовком {header_name}: {auth_value}")
+                        print(f"=== SUCCESS: Authentication worked with {header_name}")
                         return headers
                     except Exception as e:
-                        logger.debug(f"Неудачная попытка с заголовком {header_name}: {auth_value} - {str(e)}")
+                        print(f"=== FAILED: Auth attempt with {header_name} - {str(e)}")
                         continue
             
             # Если ни один вариант не сработал, возвращаем базовый вариант
+            print("=== WARNING: No auth combination worked, using default Bearer")
             headers["Authorization"] = f"Bearer {token}"
                 
         return headers

@@ -188,7 +188,7 @@ class SettingsManager:
         
         return models, current_model  # Возвращаем список моделей и объект текущей
 
-    def add_model(self, name, provider, api_endpoint, model_name, access_token, streaming=False):
+    def add_model(self, name, provider, api_endpoint, model_name, access_token, streaming=False, access_token_env=None):
         """Добавляет новую модель в список доступных."""
         if "models" not in self.settings:
             self.settings["models"] = {"available": [], "current": None}
@@ -198,8 +198,9 @@ class SettingsManager:
             "provider": provider,
             "api_endpoint": api_endpoint,
             "model_name": model_name,
-            "access_token": access_token,
-            "streaming": streaming  # Убедимся, что streaming сохраняется
+            "access_token": access_token if not access_token_env else "",
+            "access_token_env": access_token_env,
+            "streaming": streaming
         }
 
         # Проверяем, существует ли модель с таким именем

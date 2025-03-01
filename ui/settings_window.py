@@ -688,6 +688,7 @@ class SettingsWindow(QDialog):
                     api_endpoint=model_data["api_endpoint"],
                     model_name=model_data["model_name"],
                     access_token="",
+                    access_token_env=model_data["access_token_env"],
                     streaming=model_data["streaming"]
                 )
                 self.update_models_list()
@@ -790,10 +791,14 @@ class SettingsWindow(QDialog):
                 # Заполняем диалог текущими данными модели
                 dialog.name_edit.setText(current_model['name'])
                 dialog.provider_combo.setCurrentText(current_model['provider'])
-                dialog.api_endpoint_edit.setText(current_model['api_endpoint'])
-                dialog.api_key_edit.setText(current_model.get('access_token', ''))
+                
+                # Устанавливаем endpoint и API key
+                dialog.api_endpoint_edit.setText(current_model.get('api_endpoint', ''))
+                # Используем access_token_env если он есть
+                dialog.api_key_edit.setText(current_model.get('access_token_env', ''))
                 
                 # Добавляем текущую модель в комбобокс и выбираем её
+                dialog.model_name_edit.clear()
                 dialog.model_name_edit.addItem(current_model['model_name'])
                 dialog.model_name_edit.setCurrentText(current_model['model_name'])
                 
@@ -814,13 +819,15 @@ class SettingsWindow(QDialog):
                         available_models, _ = self.settings_manager.get_models()
                         # Удаляем старую модель из списка
                         available_models = [m for m in available_models if m['name'] != current_model['name']]
+                        
                         # Вставляем новую модель на ту же позицию
                         available_models.insert(current_position, {
                             'name': model_data["name"],
                             'provider': model_data["provider"],
                             'api_endpoint': model_data["api_endpoint"],
                             'model_name': model_data["model_name"],
-                            'access_token': model_data.get("access_token", current_model.get("access_token", "")),
+                            'access_token': "",
+                            'access_token_env': model_data["access_token_env"],
                             'streaming': model_data["streaming"]
                         })
                         

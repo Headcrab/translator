@@ -78,7 +78,7 @@ class AddModelDialog(QDialog):
         
         # Добавляем поле для API ключа
         self.api_key_edit = QLineEdit()
-        self.api_key_edit.setEchoMode(QLineEdit.Password)
+        self.api_key_edit.setPlaceholderText("Имя переменной окружения для API ключа")
         
         # Прогресс бар для индикации загрузки
         self.progress_bar = QProgressBar()
@@ -132,20 +132,7 @@ class AddModelDialog(QDialog):
         # Очищаем список
         self.model_name_edit.clear()
         
-        # Фильтруем и добавляем существующие модели
-        existing_provider_models = [
-            model for model in self.existing_models.values()
-            if model["provider"] == provider and 
-            search_text.lower() in model["model_name"].lower()
-        ]
-        for model in existing_provider_models:
-            self.model_name_edit.addItem(
-                self.style().standardIcon(self.style().SP_DialogApplyButton),
-                model["model_name"],
-                model
-            )
-        
-        # Фильтруем и добавляем новые модели
+        # Фильтруем и добавляем только новые модели
         for model in self.all_models:
             if (search_text.lower() in model["model_name"].lower() and
                 not self.is_model_exists(model["model_name"], provider)):
@@ -206,85 +193,93 @@ class AddModelDialog(QDialog):
         self.search_edit.clear()
         self.all_models.clear()
         
-        # Добавляем существующие модели для текущего провайдера
-        existing_provider_models = [
-            model for model in self.existing_models.values()
-            if model["provider"] == provider
-        ]
-        for model in existing_provider_models:
-            self.model_name_edit.addItem(
-                self.style().standardIcon(self.style().SP_DialogApplyButton),
-                model["model_name"],
-                model
-            )
-        
         # Скрываем/показываем поле endpoint в зависимости от провайдера
         is_google = provider == "Google"
         self.api_endpoint_edit.setVisible(not is_google)
         self.api_endpoint_label.setVisible(not is_google)
         
-        if provider == "OpenAI":
-            self.api_endpoint_edit.setText("https://api.openai.com/v1")
-            self.api_key_edit.setText(os.getenv("OPENAI_API_KEY", ""))
-        elif provider == "Anthropic":
-            self.api_endpoint_edit.setText("https://api.anthropic.com")
-            self.api_key_edit.setText(os.getenv("ANTHROPIC_API_KEY", ""))
-        elif provider == "Google":
-            self.api_endpoint_edit.setText("")
-            self.api_key_edit.setText(os.getenv("GOOGLE_API_KEY", ""))
-        elif provider == "OpenRouter":
-            self.api_endpoint_edit.setText("https://openrouter.ai/api/v1/chat/completions")
-            self.api_key_edit.setText(os.getenv("OPENROUTER_API_KEY", ""))
-        elif provider == "Custom":
-            self.api_endpoint_edit.setText("")
-            self.api_key_edit.setText("")
+        # Устанавливаем значения по умолчанию для каждого провайдера
+        provider_defaults = {
+            "OpenAI": {
+                "endpoint": "https://api.openai.com/v1/chat/completions",
+                "env_var": "OPENAI_API_KEY"
+            },
+            "Anthropic": {
+                "endpoint": "https://api.anthropic.com/v1/messages",
+                "env_var": "ANTHROPIC_API_KEY"
+            },
+            "Google": {
+                "endpoint": "",
+                "env_var": "GOOGLE_API_KEY"
+            },
+            "OpenRouter": {
+                "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                "env_var": "OPENROUTER_API_KEY"
+            },
+            "Custom": {
+                "endpoint": "",
+                "env_var": "CUSTOM_API_KEY"
+            }
+        }
+        
+        defaults = provider_defaults.get(provider, {"endpoint": "", "env_var": ""})
+        self.api_endpoint_edit.setText(defaults["endpoint"])
+        self.api_key_edit.setText(defaults["env_var"])
+        
+        # Обновляем список доступных моделей для нового провайдера
+        self.fetch_available_models()
         
         # Обновляем название при смене провайдера
         self.update_model_name(self.model_name_edit.currentText())
         
     async def _fetch_models(self):
         """Асинхронно получает список моделей от выбранного провайдера."""
-        provider = self.provider_combo.currentText().lower()
-        api_key = self.api_key_edit.text().strip()
+        provider = self.provider_combo.currentText()
+        api_key_env = self.api_key_edit.text().strip()
+        api_key = os.getenv(api_key_env, "")
         
         if not api_key:
+            QMessageBox.warning(
+                self,
+                "Ошибка",
+                f"API ключ не найден. Пожалуйста, установите переменную окружения {api_key_env}"
+            )
             return []
             
-        # Для Custom провайдера создаем экземпляр напрямую
-        if provider == "custom":
-            endpoint = self.api_endpoint_edit.text().strip()
+        # Получаем endpoint в зависимости от провайдера
+        endpoint = self.api_endpoint_edit.text().strip()
+        if provider == "Custom":
             if not endpoint:
-                raise Exception("Для Custom провайдера необходимо указать API endpoint")
-                
-            from providers.custom_provider import CustomProvider
-            
-            model_info = {
-                "provider": provider,
-                "api_endpoint": endpoint,
-                "access_token": api_key,
-                "model_name": "test"  # Временное значение для инициализации
-            }
-            
-            custom_provider = CustomProvider(model_info)
-            models = await custom_provider.get_available_models()
-            
-            # Преобразуем формат моделей к общему виду
-            return [
-                {
-                    "id": model.get("id", ""),
-                    "name": model.get("name", model.get("id", "")),
-                    "model_name": model.get("id", ""),
-                }
-                for model in models
-            ]
-            
-        # Для остальных провайдеров используем фабрику
-        api_keys = {provider: api_key}
-        models = await LLMProviderFactory.get_all_available_models(api_keys)
+                QMessageBox.warning(
+                    self,
+                    "Ошибка",
+                    "Для Custom провайдера необходимо указать API endpoint"
+                )
+                return []
+            # Добавляем /chat/completions к URL если его нет
+            if not endpoint.endswith("/chat/completions"):
+                endpoint = endpoint.rstrip("/") + "/chat/completions"
         
-        # Сортируем модели по имени
-        models.sort(key=lambda x: x["name"])
-        return models
+        # Создаем конфигурацию для провайдера
+        provider_config = {
+            "provider": provider,
+            "api_endpoint": endpoint,
+            "model_name": "gpt-3.5-turbo",  # Временное значение для инициализации
+            "access_token": api_key_env,
+        }
+        
+        try:
+            # Создаем провайдер через фабрику
+            provider_instance = LLMProviderFactory.get_provider(provider_config)
+            models = await provider_instance.get_available_models()
+            return models
+        except Exception as e:
+            QMessageBox.warning(
+                self,
+                "Ошибка",
+                f"Не удалось получить список моделей: {str(e)}"
+            )
+            return []
         
     def fetch_available_models(self):
         """Получает список доступных моделей от провайдера."""
@@ -353,7 +348,7 @@ class AddModelDialog(QDialog):
         name = self.name_edit.text().strip()
         provider = self.provider_combo.currentText()
         api_endpoint = self.api_endpoint_edit.text().strip()
-        api_key = self.api_key_edit.text().strip()
+        api_key_env = self.api_key_edit.text().strip()
         
         # Получаем имя модели
         if provider == "Custom":
@@ -367,7 +362,7 @@ class AddModelDialog(QDialog):
                 model_name = current_data["model_name"]
         
         # Проверяем обязательные поля
-        required_fields = [name, provider, model_name]
+        required_fields = [name, provider, model_name, api_key_env]
         if provider != "Google":
             required_fields.append(api_endpoint)
             
@@ -379,38 +374,17 @@ class AddModelDialog(QDialog):
             )
             return None
             
-        # Для Custom провайдера всегда создаем новую модель
-        if provider == "Custom":
-            return {
-                "name": name,
-                "provider": provider,
-                "model_name": model_name,
-                "api_endpoint": api_endpoint,
-                "access_token": api_key,
-                "streaming": self.stream_checkbox.isChecked()
-            }
-            
-        # Проверяем, существует ли уже такая модель
-        existing_model = self.is_model_exists(model_name, provider)
-        if existing_model:
-            # Если модель существует, обновляем только измененные поля
-            return {
-                "name": existing_model["name"],
-                "provider": provider,
-                "model_name": model_name,
-                "api_endpoint": api_endpoint if provider != "Google" else "",
-                "access_token": api_key if api_key else existing_model.get("access_token", ""),
-                "streaming": self.stream_checkbox.isChecked()
-            }
-            
-        return {
+        # Создаем базовую конфигурацию модели
+        model_info = {
             "name": name,
             "provider": provider,
             "model_name": model_name,
             "api_endpoint": api_endpoint if provider != "Google" else "",
-            "access_token": api_key,
+            "access_token_env": api_key_env,
             "streaming": self.stream_checkbox.isChecked()
         }
+        
+        return model_info
 
     def apply_theme(self):
         """Применяет текущую тему к окну и всем его элементам."""

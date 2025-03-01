@@ -76,19 +76,13 @@ class LLMProviderFactory:
                 "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
                 "model_name": "openai/gpt-3.5-turbo",
                 "access_token": api_keys.get("openrouter", "")
-            },
-            "custom": {
-                "provider": "custom",
-                "api_endpoint": "",
-                "model_name": "",
-                "access_token": api_keys.get("custom", "")
             }
         }
         
         # Создаем задачи для асинхронного получения моделей
         tasks = []
         for provider_name, config in providers_config.items():
-            if config["access_token"] and provider_name != "custom":  # Получаем модели только если есть API ключ и провайдер не Custom
+            if config["access_token"]:  # Получаем модели только если есть API ключ
                 provider = LLMProviderFactory.get_provider(config)
                 tasks.append(provider.get_available_models())
         

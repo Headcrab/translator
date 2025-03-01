@@ -511,6 +511,9 @@ class MainWindow(QMainWindow):
         """Настройка горячих клавиш"""
         hide_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
         hide_shortcut.activated.connect(self.hide)
+        
+        translate_shortcut = QShortcut(QKeySequence(Qt.ControlModifier | Qt.Key.Key_Return), self)
+        translate_shortcut.activated.connect(self.start_translation)
 
     def wheelEvent(self, event):
         """Обработка вращения колеса мыши с зажатым Ctrl для изменения размера шрифта"""
