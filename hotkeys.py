@@ -2,8 +2,7 @@ import traceback
 import keyboard
 import pyperclip
 import time
-import win32api
-import win32con
+import logging
 
 
 def register_global_hotkeys(window, hotkey):
@@ -19,32 +18,20 @@ def register_global_hotkeys(window, hotkey):
         return True
 
     def send_ctrl_c():
-        """Отправляет Ctrl+C через SendInput"""
-        # Нажимаем Ctrl
-        win32api.keybd_event(win32con.VK_CONTROL, 0, 0, 0)
-        time.sleep(0.05)
-
-        # Нажимаем C
-        win32api.keybd_event(ord("C"), 0, 0, 0)
-        time.sleep(0.05)
-
-        # Отпускаем C
-        win32api.keybd_event(ord("C"), 0, win32con.KEYEVENTF_KEYUP, 0)
-        time.sleep(0.05)
-
-        # Отпускаем Ctrl
-        win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0)
-        time.sleep(0.05)
-        # keyboard.send('ctrl+c')
+        """Отправляет Ctrl+C в кросс-платформенном варианте."""
+        try:
+            keyboard.send("ctrl+c")
+        except Exception as e:
+            logging.error("Failed to send Ctrl+C: %s", e)
 
     def on_hotkey_triggered():
         try:
-            print("Функция on_hotkey_triggered вызвана")
+            logging.debug("Функция on_hotkey_triggered вызвана")
 
             # Ждем отпускания всех клавиш пользователем
-            print("Ожидание отпускания всех клавиш...")
+            logging.debug("Ожидание отпускания всех клавиш...")
             wait_for_keys_release()
-            print("Все клавиши отпущены")
+            logging.debug("Все клавиши отпущены")
 
             # Получаем текущий текст из буфера обмена
             old_text = pyperclip.paste()
@@ -61,21 +48,19 @@ def register_global_hotkeys(window, hotkey):
 
             # Проверяем, изменился ли текст
             if text and text != old_text:
-                print(
-                    f"Текст из буфера: {text[:100]}..."
-                )  # Показываем первые 100 символов
+                logging.debug("Текст из буфера: %s...", text[:100])
                 window.clipboard_updated.emit(text)
-                print("Сигнал clipboard_updated отправлен")
+                logging.debug("Сигнал clipboard_updated отправлен")
             else:
-                print("Буфер обмена не изменился или пуст")
+                logging.debug("Буфер обмена не изменился или пуст")
 
         except Exception as e:
-            print(f"Критическая ошибка в on_hotkey_triggered: {str(e)}")
+            logging.error("Критическая ошибка в on_hotkey_triggered: %s", e)
             traceback.print_exc()
 
     # Регистрация горячей клавиши
     keyboard.add_hotkey(hotkey, on_hotkey_triggered)
-    print(f"Глобальный хоткей '{hotkey}' успешно зарегистрирован.")
+    logging.info("Глобальный хоткей '%s' успешно зарегистрирован.", hotkey)
 
 
 def unregister_global_hotkeys():
