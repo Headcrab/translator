@@ -61,9 +61,9 @@ class SettingsManager:
             },
             "behavior": {
                 "start_minimized": False,
-                "minimize_to_tray": True
+                "minimize_to_tray_on_close": True
             },
-            "theme": "system",
+            "theme": {"mode": "system"},
             "font": {
                 "family": "Arial",
                 "size": 12
@@ -357,11 +357,22 @@ class SettingsManager:
 
     def get_settings_window_geometry(self):
         """Возвращает сохраненную геометрию окна настроек."""
-        return self.settings.get("settings_window_geometry", (100, 100, 400, 300))
+        win = self.settings.get("settings_window", {})
+        return (
+            win.get("x", 100),
+            win.get("y", 100),
+            win.get("width", 400),
+            win.get("height", 300),
+        )
 
     def set_settings_window_geometry(self, x, y, width, height):
         """Сохраняет геометрию окна настроек."""
-        self.settings["settings_window_geometry"] = (x, y, width, height)
+        self.settings["settings_window"] = {
+            "x": x,
+            "y": y,
+            "width": width,
+            "height": height,
+        }
         self.save_settings()
 
     def get_font_settings(self):
