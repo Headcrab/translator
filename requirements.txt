@@ -9,3 +9,6 @@ pyperclip>=1.8.2
 pystray>=0.19.4
 Pillow>=9.3.0
 pywin32>=306
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-qt>=4.2.0

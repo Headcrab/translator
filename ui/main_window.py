@@ -97,6 +97,7 @@ class MainWindow(QMainWindow):
             self.show()
 
         self.apply_font_settings()
+        self.apply_theme()
 
         self.setup_shortcuts()
 
