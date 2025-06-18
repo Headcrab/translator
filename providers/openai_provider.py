@@ -60,11 +60,17 @@ class OpenAIProvider(BaseProvider):
 
         data = {"model": self.model_name, "messages": messages, "temperature": 0.7}
 
+        url = f"{self.api_endpoint}/chat/completions"
+        await self._log_http_request("POST", url, headers, data)
+
         async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"{self.api_endpoint}/chat/completions", headers=headers, json=data
-            ) as response:
-                response.raise_for_status()
+            async with session.post(url, headers=headers, json=data) as response:
+                response_text = await response.text()
+                await self._log_http_response(response, response_text)
+
+                if response.status != 200:
+                    await self._handle_http_error(response, "перевода")
+
                 result = await response.json()
                 return result["choices"][0]["message"]["content"].strip()
 

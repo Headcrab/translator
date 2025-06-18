@@ -30,44 +30,55 @@ class SettingsManager:
                 "width": 800,
                 "height": 600,
             },
+            "providers": {
+                "OpenAI": {
+                    "access_token_env": "OPENAI_API_KEY",
+                    "api_endpoint": "https://api.openai.com/v1/chat/completions",
+                },
+                "Anthropic": {
+                    "access_token_env": "ANTHROPIC_API_KEY",
+                    "api_endpoint": "https://api.anthropic.com/v1/messages",
+                },
+                "Google": {"access_token_env": "GOOGLE_API_KEY", "api_endpoint": ""},
+                "OpenRouter": {
+                    "access_token_env": "OPENROUTER_API_KEY",
+                    "api_endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                },
+                "Cerebras": {
+                    "access_token_env": "CEREBRAS_API_KEY",
+                    "api_endpoint": "https://api.cerebras.ai/v1",
+                },
+                "Nebius": {
+                    "access_token_env": "NEBIUS_API_KEY",
+                    "api_endpoint": "https://api.studio.nebius.ai/v1/",
+                },
+            },
             "languages": {
                 "available": ["Русский", "English", "Deutsch", "Français", "Español"],
-                "current": "English"
+                "current": "English",
             },
-            "models": {
-                "available": [],
-                "current": None
-            },
+            "models": {"available": [], "current": None},
             "prompts": {
                 "available": [
                     {
                         "name": "Базовый",
-                        "text": "Переведи следующий текст на указанный язык, сохраняя стиль и тон оригинала."
+                        "text": "Переведи следующий текст на указанный язык, сохраняя стиль и тон оригинала.",
                     },
                     {
                         "name": "Формальный",
-                        "text": "Переведи следующий текст на указанный язык, используя формальный стиль и деловой тон."
+                        "text": "Переведи следующий текст на указанный язык, используя формальный стиль и деловой тон.",
                     },
                     {
                         "name": "Разговорный",
-                        "text": "Переведи следующий текст на указанный язык, используя разговорный стиль и неформальный тон."
-                    }
+                        "text": "Переведи следующий текст на указанный язык, используя разговорный стиль и неформальный тон.",
+                    },
                 ],
-                "current": None
+                "current": None,
             },
-            "hotkey": {
-                "modifiers": ["ctrl", "shift"],
-                "key": "T"
-            },
-            "behavior": {
-                "start_minimized": False,
-                "minimize_to_tray_on_close": True
-            },
+            "hotkey": {"modifiers": ["ctrl", "shift"], "key": "T"},
+            "behavior": {"start_minimized": False, "minimize_to_tray_on_close": True},
             "theme": {"mode": "system"},
-            "font": {
-                "family": "Arial",
-                "size": 12
-            }
+            "font": {"family": "Arial", "size": 12},
         }
 
         try:
@@ -177,76 +188,104 @@ class SettingsManager:
 
     def get_models(self):
         """Возвращает список доступных моделей и текущую модель."""
-        models = self.settings.get("models", {}).get("available", [])
-        current_model_name = self.settings.get("models", {}).get("current")
-        
-        # Находим текущую модель по имени
-        current_model = next(
-            (model for model in models if model["name"] == current_model_name),
-            None
-        )
-        
-        return models, current_model  # Возвращаем список моделей и объект текущей
+        models_config = self.settings.get("models", {}).get("available", [])
+        current_model_config = self.settings.get("models", {}).get("current")
 
-    def add_model(self, name, provider, api_endpoint, model_name, access_token, streaming=False, access_token_env=None):
+        hydrated_models = []
+        for model_conf in models_config:
+            provider_name = model_conf["provider"]
+            provider_settings = self.get_provider_settings(provider_name)
+
+            # Получаем токен доступа из переменных окружения
+            access_token_env = provider_settings.get("access_token_env", "")
+            access_token = ""
+            if access_token_env:
+                access_token = os.getenv(access_token_env, "")
+
+            hydrated_model = {
+                **model_conf,
+                "name": f"{model_conf['model_name']} - {provider_name}",
+                "api_endpoint": provider_settings.get("api_endpoint", ""),
+                "access_token_env": access_token_env,
+                "access_token": access_token,
+            }
+            hydrated_models.append(hydrated_model)
+
+        current_model = None
+        if current_model_config:
+            current_model = next(
+                (
+                    m
+                    for m in hydrated_models
+                    if m["provider"] == current_model_config["provider"]
+                    and m["model_name"] == current_model_config["model_name"]
+                ),
+                None,
+            )
+
+        return hydrated_models, current_model
+
+    def add_model(self, provider, model_name, streaming=False):
         """Добавляет новую модель в список доступных."""
         if "models" not in self.settings:
             self.settings["models"] = {"available": [], "current": None}
 
-        model = {
-            "name": name,
-            "provider": provider,
-            "api_endpoint": api_endpoint,
-            "model_name": model_name,
-            "access_token": access_token if not access_token_env else "",
-            "access_token_env": access_token_env,
-            "streaming": streaming
-        }
+        model = {"provider": provider, "model_name": model_name, "streaming": streaming}
 
         # Проверяем, существует ли модель с таким именем
-        existing_model_index = next(
-            (i for i, m in enumerate(self.settings["models"]["available"]) if m["name"] == name),
-            None
+        existing_model = next(
+            (
+                m
+                for m in self.settings["models"]["available"]
+                if m["provider"] == provider and m["model_name"] == model_name
+            ),
+            None,
         )
 
-        if existing_model_index is not None:
-            # Обновляем существующую модель
-            self.settings["models"]["available"][existing_model_index] = model
-        else:
-            # Добавляем новую модель
+        if not existing_model:
             self.settings["models"]["available"].append(model)
 
         # Если текущая модель не выбрана, устанавливаем новую модель как текущую
         if not self.settings["models"]["current"]:
-            self.settings["models"]["current"] = name
+            self.settings["models"]["current"] = {
+                "provider": provider,
+                "model_name": model_name,
+            }
 
         self.save_settings()
 
-    def remove_model(self, name):
+    def remove_model(self, provider, model_name):
         """Удаляет модель из списка доступных."""
         if "models" in self.settings:
             self.settings["models"]["available"] = [
-                model
-                for model in self.settings["models"]["available"]
-                if model["name"] != name
+                m
+                for m in self.settings["models"]["available"]
+                if not (m["provider"] == provider and m["model_name"] == model_name)
             ]
-            # Если удалили текущую модель, сбрасываем выбор
-            if self.settings["models"]["current"] == name:
-                self.settings["models"]["current"] = (
-                    self.settings["models"]["available"][0]["name"]
-                    if self.settings["models"]["available"]
-                    else None
-                )
+
+            current = self.settings["models"].get("current")
+            if (
+                current
+                and current["provider"] == provider
+                and current["model_name"] == model_name
+            ):
+                available = self.settings["models"]["available"]
+                self.settings["models"]["current"] = available[0] if available else None
+
             self.save_settings()
 
-    def set_current_model(self, name):
+    def set_current_model(self, provider, model_name):
         """Устанавливает текущую модель."""
         if "models" in self.settings:
             # Проверяем, существует ли модель с таким именем
             if any(
-                model["name"] == name for model in self.settings["models"]["available"]
+                m["provider"] == provider and m["model_name"] == model_name
+                for m in self.settings["models"]["available"]
             ):
-                self.settings["models"]["current"] = name
+                self.settings["models"]["current"] = {
+                    "provider": provider,
+                    "model_name": model_name,
+                }
                 self.save_settings()
 
     def set_model_access_token(self, model_name, access_token):
@@ -258,60 +297,67 @@ class SettingsManager:
                     self.save_settings()
                     break
 
-    def get_model_info(self, model_name=None):
-        """Возвращает информацию о модели.
+    def get_model_info(self, provider=None, model_name=None):
+        """Возвращает информацию о модели, включая ключ API из настроек провайдера."""
+        if provider is None or model_name is None:
+            current_config = self.settings.get("models", {}).get("current")
+            if not current_config:
+                available = self.settings.get("models", {}).get("available", [])
+                if not available:
+                    return None
+                current_config = available[0]
 
-        Args:
-            model_name: Имя модели. Если не указано, возвращает информацию о текущей модели.
+            provider = current_config["provider"]
+            model_name = current_config["model_name"]
 
-        Returns:
-            dict: Информация о модели (name, provider, api_endpoint, model_name, access_token)
-            или None, если модель не найдена
-        """
-        if "models" not in self.settings:
-            return None
+        models, _ = self.get_models()
+        model_info = next(
+            (
+                m
+                for m in models
+                if m["provider"] == provider and m["model_name"] == model_name
+            ),
+            None,
+        )
 
-        if model_name is None:
-            model_name = self.settings["models"].get("current")
-            if model_name is None:
-                return None
+        if model_info:
+            access_token_env = model_info.get("access_token_env", "")
+            if access_token_env:
+                access_token = os.getenv(access_token_env, "")
+                model_info["access_token"] = access_token
+            else:
+                model_info["access_token"] = ""
 
-        for model in self.settings["models"]["available"]:
-            if model["name"] == model_name:
-                return model.copy()  # Возвращаем копию, чтобы избежать случайных изменений
-
-        return None
+        return model_info
 
     def get_theme(self):
-        """Возвращает текущую тему.
-
-        Returns:
-            str: Режим темы ('light', 'dark' или 'system')
-        """
-        return self.settings.get("theme", {}).get("mode", "system")
+        """Возвращает настройки темы."""
+        theme = self.settings.get("theme", {})
+        return theme.get("mode", "system")
 
     def set_theme(self, mode):
-        """Устанавливает тему.
+        """Устанавливает настройки темы."""
+        self.settings["theme"] = {"mode": mode}
+        self.save_settings()
 
-        Args:
-            mode: Режим темы ('light', 'dark' или 'system')
-        """
-        if mode not in ["light", "dark", "system"]:
-            raise ValueError("Недопустимый режим темы")
-        
-        if "theme" not in self.settings:
-            self.settings["theme"] = {}
-        
-        self.settings["theme"]["mode"] = mode
+    def get_provider_settings(self, provider_name):
+        """Возвращает настройки для конкретного провайдера."""
+        return self.settings.get("providers", {}).get(provider_name, {})
+
+    def set_provider_settings(self, provider_name, access_token_env, api_endpoint):
+        """Устанавливает переменную окружения и endpoint для провайдера."""
+        if "providers" not in self.settings:
+            self.settings["providers"] = {}
+        if provider_name not in self.settings["providers"]:
+            self.settings["providers"][provider_name] = {}
+        self.settings["providers"][provider_name]["access_token_env"] = access_token_env
+        self.settings["providers"][provider_name]["api_endpoint"] = api_endpoint
         self.save_settings()
 
     def add_language(self, language):
         """Добавляет новый язык в список доступных."""
         if "languages" not in self.settings:
-            self.settings["languages"] = {
-                "available": [language],
-                "current": language
-            }
+            self.settings["languages"] = {"available": [language], "current": language}
         else:
             if language not in self.settings["languages"]["available"]:
                 self.settings["languages"]["available"].append(language)
@@ -323,11 +369,11 @@ class SettingsManager:
             if old_language in self.settings["languages"]["available"]:
                 index = self.settings["languages"]["available"].index(old_language)
                 self.settings["languages"]["available"][index] = new_language
-                
+
                 # Если редактируем текущий язык, обновляем его
                 if self.settings["languages"]["current"] == old_language:
                     self.settings["languages"]["current"] = new_language
-                    
+
                 self.save_settings()
 
     def delete_language(self, language):
@@ -335,7 +381,7 @@ class SettingsManager:
         if "languages" in self.settings:
             if language in self.settings["languages"]["available"]:
                 self.settings["languages"]["available"].remove(language)
-                
+
                 # Если удаляем текущий язык, меняем на первый доступный
                 if self.settings["languages"]["current"] == language:
                     self.settings["languages"]["current"] = (
@@ -343,16 +389,16 @@ class SettingsManager:
                         if self.settings["languages"]["available"]
                         else "ru"
                     )
-                    
+
                 self.save_settings()
 
     def get_system_prompt(self) -> str:
         prompt = self.settings.get("system_prompt", "")
         # Защита от пустого промпта
         return prompt or "Ты профессиональный переводчик. Переведи текст на {language}."
-    
+
     def set_system_prompt(self, prompt):
-        self.settings['system_prompt'] = prompt
+        self.settings["system_prompt"] = prompt
         self.save_settings()
 
     def get_settings_window_geometry(self):
@@ -380,7 +426,7 @@ class SettingsManager:
         appearance = self.settings.get("font", {})
         return {
             "font_family": appearance.get("family", "Arial"),
-            "font_size": int(appearance.get("size", 12))
+            "font_size": int(appearance.get("size", 12)),
         }
 
     def save_font_settings(self, font_family, font_size):
@@ -390,29 +436,26 @@ class SettingsManager:
                 font_size = int(font_size)
             except (ValueError, TypeError):
                 font_size = 12
-            
+
         if "font" not in self.settings:
             self.settings["font"] = {}
-        
-        self.settings["font"].update({
-            "family": font_family,
-            "size": font_size
-        })
-        
+
+        self.settings["font"].update({"family": font_family, "size": font_size})
+
         self.save_settings()
 
     def get_prompts(self):
         """Возвращает список доступных промптов и текущий промпт."""
         return (
             self.settings["prompts"]["available"],
-            self.settings["prompts"]["current"]
+            self.settings["prompts"]["current"],
         )
 
     def get_prompt_info(self, name=None):
         """Возвращает информацию о промпте по имени."""
         if not name and self.settings["prompts"]["current"]:
             return self.settings["prompts"]["current"]
-            
+
         for prompt in self.settings["prompts"]["available"]:
             if prompt["name"] == name:
                 return prompt
@@ -432,8 +475,10 @@ class SettingsManager:
             if prompt["name"] == old_name:
                 prompt["name"] = new_name
                 prompt["text"] = text
-                if self.settings["prompts"]["current"] and \
-                   self.settings["prompts"]["current"]["name"] == old_name:
+                if (
+                    self.settings["prompts"]["current"]
+                    and self.settings["prompts"]["current"]["name"] == old_name
+                ):
                     self.settings["prompts"]["current"] = prompt
                 break
         self.save_settings()
@@ -441,17 +486,20 @@ class SettingsManager:
     def delete_prompt(self, name):
         """Удаляет системный промпт."""
         self.settings["prompts"]["available"] = [
-            p for p in self.settings["prompts"]["available"] 
-            if p["name"] != name
+            p for p in self.settings["prompts"]["available"] if p["name"] != name
         ]
-        
-        if self.settings["prompts"]["current"] and \
-           self.settings["prompts"]["current"]["name"] == name:
+
+        if (
+            self.settings["prompts"]["current"]
+            and self.settings["prompts"]["current"]["name"] == name
+        ):
             if self.settings["prompts"]["available"]:
-                self.settings["prompts"]["current"] = self.settings["prompts"]["available"][0]
+                self.settings["prompts"]["current"] = self.settings["prompts"][
+                    "available"
+                ][0]
             else:
                 self.settings["prompts"]["current"] = None
-        
+
         self.save_settings()
 
     def set_current_prompt(self, name):

@@ -244,7 +244,7 @@ class MainWindow(QMainWindow):
         self.translate_button.clicked.connect(self.start_translation)
 
     def update_model_combo(self):
-        """Обновляет список моделей в выпадающем меню."""
+        """Обновляет список моделей в выпадающем списке."""
         self.model_combo.clear()
         models, current_model = self.settings_manager.get_models()
 
@@ -332,10 +332,21 @@ class MainWindow(QMainWindow):
 
         try:
             llm_api = LLMApi(model_config, self.settings_manager)
+            print(f"🔥 DEBUG STREAMING: model_config = {model_config}")
             # Создаем асинхронную лямбда-функцию для callback
-            await llm_api.translate(
+            translated = await llm_api.translate(
                 text, target_lang, streaming_callback=lambda t: self.update_result(t)
             )
+            print(
+                f"🔥 DEBUG STREAMING: translated = '{translated}' (type: {type(translated)}, len: {len(translated) if translated else 'None'})"
+            )
+
+            # Если streaming не сработал, устанавливаем результат напрямую
+            if translated and not self.translated_text.toPlainText():
+                self.translated_text.setText(translated)
+                print(
+                    f"🔥 DEBUG STREAMING: Set text directly, UI field = '{self.translated_text.toPlainText()}'"
+                )
         finally:
             self.progress_bar.hide()
 
@@ -350,23 +361,29 @@ class MainWindow(QMainWindow):
         try:
             llm_api = LLMApi(model_config, self.settings_manager)
             translated = await llm_api.translate(text, target_lang)
+            print(
+                f"🔥 DEBUG: translated = '{translated}' (type: {type(translated)}, len: {len(translated) if translated else 'None'})"
+            )
             self.translated_text.setText(translated)
+            print(
+                f"🔥 DEBUG: UI field after setText = '{self.translated_text.toPlainText()}'"
+            )
         finally:
             self.progress_bar.hide()
 
     @asyncSlot()
     async def on_clipboard_updated(self, text):
+        """Обработчик обновления буфера обмена с хоткея."""
         try:
-            self.progress_bar.show()
-            translation = await self.llm_api.translate(
-                text, self.target_lang, self.handle_streaming_response
-            )
-            self.update_translation(translation)
+            # Устанавливаем текст в поле ввода
+            self.text_edit.setText(text)
+
+            # Запускаем перевод
+            await self.start_translation()
+
         except Exception as e:
             print(f"Translation error: {e}")
-            self.translation_area.setPlainText("Ошибка перевода")
-        finally:
-            self.progress_bar.hide()
+            self.show_error_message(f"Ошибка перевода: {str(e)}")
 
     def update_clipboard(self, text):
         """Слот для обновления буфера обмена"""
@@ -412,16 +429,30 @@ class MainWindow(QMainWindow):
                 index = self.model_combo.findText(model_name)
                 if index >= 0:
                     self.model_combo.setCurrentIndex(index)
-                    self.settings_manager.set_current_model(model_name)
+                    parts = model_name.split(" - ")
+                    if len(parts) >= 2:
+                        provider = parts[-1]
+                        name = " - ".join(parts[:-1])
+                        self.settings_manager.set_current_model(provider, name)
 
     def on_language_changed(self, language):
         """Обработчик изменения языка в дропбоксе."""
         self.settings_manager.set_current_language(language)
 
-    def on_model_changed(self, model_name):
-        """Обработчик изменения модели в дропбоксе."""
-        if model_name:
-            self.settings_manager.set_current_model(model_name)
+    def on_model_changed(self, index):
+        """Обработчик смены модели."""
+        model_name_display = self.model_combo.currentText()
+        if not model_name_display:
+            return
+
+        parts = model_name_display.split(" - ")
+        if len(parts) < 2:
+            return
+
+        provider = parts[-1]
+        model_name = " - ".join(parts[:-1])
+
+        self.settings_manager.set_current_model(provider, model_name)
 
     def on_prompt_changed(self, prompt_name):
         """Обработчик изменения системного промпта в дропбоксе."""
@@ -490,10 +521,13 @@ class MainWindow(QMainWindow):
 
     async def update_result(self, text):
         """Асинхронное обновление текста перевода с обработкой специальных маркеров"""
+        print(f"🔥 DEBUG update_result called with: '{text}' (type: {type(text)})")
         if not text or text.startswith("[DONE]"):
+            print("🔥 DEBUG update_result: returning early (empty or DONE)")
             return
         if text.startswith("[META]"):
             self.statusBar().showMessage(text[6:], 5000)
+            print("🔥 DEBUG update_result: META message set")
             return
 
         # Добавляем текст и автоматически прокручиваем
@@ -501,11 +535,20 @@ class MainWindow(QMainWindow):
         self.translated_text.insertPlainText(text)
         self.translated_text.ensureCursorVisible()
         QApplication.processEvents()
+        print(
+            f"🔥 DEBUG update_result: text added, UI field = '{self.translated_text.toPlainText()}')"
+        )
 
     def get_selected_model_config(self):
         """Возвращает конфигурацию выбранной модели."""
-        model_name = self.model_combo.currentText()
-        return self.settings_manager.get_model_info(model_name)
+        display_name = self.model_combo.currentText()
+        parts = display_name.split(" - ")
+        if len(parts) >= 2:
+            provider = parts[-1]
+            model_name = " - ".join(parts[:-1])
+            return self.settings_manager.get_model_info(provider, model_name)
+        # Фолбэк: используем текущую модель из настроек
+        return self.settings_manager.get_model_info()
 
     def event(self, event):
         if isinstance(event, UpdateTranslationEvent):
